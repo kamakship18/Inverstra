@@ -1,5 +1,4 @@
-// pages/influencer/profile-setup.js
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Head from 'next/head';
 import { useRouter } from 'next/router';
 import { Button } from '@/components/ui/button';
@@ -7,11 +6,12 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { ChevronRight, LightbulbIcon, TrendingUp, Award, PieChart, Languages } from 'lucide-react';
+import { ChevronRight, LightbulbIcon, TrendingUp, Award, PieChart, Languages, AlertCircle, User } from 'lucide-react';
 
 export default function InfluencerProfileSetup() {
   const router = useRouter();
   const [formData, setFormData] = useState({
+    name: '',
     expertiseAreas: [],
     experienceBackground: '',
     contentStyle: [],
@@ -20,6 +20,31 @@ export default function InfluencerProfileSetup() {
   
   const [currentStep, setCurrentStep] = useState(1);
   const totalSteps = 2;
+  const [walletAddress, setWalletAddress] = useState('');
+  const [errors, setErrors] = useState({});
+  
+  useEffect(() => {
+    const connectedWallet = localStorage.getItem('connectedWalletAddress');
+    if (connectedWallet) {
+      setWalletAddress(connectedWallet);
+    } else {
+      // Redirect to wallet connect page if no wallet is connected
+      window.location.href = '/connect-wallet';
+    }
+  }, []);
+  
+  // Format address for display
+  const formatAddress = (address) => {
+    if (!address) return "";
+    return `${address.substring(0, 6)}...${address.substring(address.length - 4)}`;
+  };
+  
+  const handleNameChange = (e) => {
+    setFormData(prev => ({ ...prev, name: e.target.value }));
+    if (e.target.value) {
+      setErrors(prev => ({ ...prev, name: null }));
+    }
+  };
   
   const handleExpertiseToggle = (area) => {
     setFormData(prev => {
@@ -27,12 +52,20 @@ export default function InfluencerProfileSetup() {
         ? prev.expertiseAreas.filter(item => item !== area)
         : [...prev.expertiseAreas, area];
       
+      // Clear error if at least one area is selected
+      if (updatedAreas.length > 0) {
+        setErrors(prev => ({ ...prev, expertiseAreas: null }));
+      }
+      
       return { ...prev, expertiseAreas: updatedAreas };
     });
   };
   
   const handleExperienceChange = (e) => {
     setFormData(prev => ({ ...prev, experienceBackground: e.target.value }));
+    if (e.target.value) {
+      setErrors(prev => ({ ...prev, experienceBackground: null }));
+    }
   };
   
   const handleContentStyleToggle = (style) => {
@@ -40,6 +73,11 @@ export default function InfluencerProfileSetup() {
       const updatedStyles = prev.contentStyle.includes(style)
         ? prev.contentStyle.filter(item => item !== style)
         : [...prev.contentStyle, style];
+      
+      // Clear error if at least one style is selected
+      if (updatedStyles.length > 0) {
+        setErrors(prev => ({ ...prev, contentStyle: null }));
+      }
       
       return { ...prev, contentStyle: updatedStyles };
     });
@@ -55,13 +93,44 @@ export default function InfluencerProfileSetup() {
     });
   };
   
+  const validateStep = (step) => {
+    const newErrors = {};
+    
+    if (step === 1) {
+      if (!formData.name.trim()) {
+        newErrors.name = 'Name is required';
+      }
+      
+      if (formData.expertiseAreas.length === 0) {
+        newErrors.expertiseAreas = 'Please select at least one expertise area';
+      }
+      
+      if (!formData.experienceBackground.trim()) {
+        newErrors.experienceBackground = 'Experience background is required';
+      }
+    }
+    
+    if (step === 2) {
+      if (formData.contentStyle.length === 0) {
+        newErrors.contentStyle = 'Please select at least one content style';
+      }
+    }
+    
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+  
   const handleContinue = () => {
-    if (currentStep < totalSteps) {
-      setCurrentStep(prev => prev + 1);
-    } else {
-      // Save data and redirect to dashboard
-      console.log('Profile data:', formData);
-      router.push('/influencer/dashboard');
+    const isValid = validateStep(currentStep);
+    
+    if (isValid) {
+      if (currentStep < totalSteps) {
+        setCurrentStep(prev => prev + 1);
+      } else {
+        localStorage.setItem('userName', formData.name);
+        console.log('Profile data:', formData);
+        router.push('/influencer/dashboard');
+      }
     }
   };
   
@@ -75,29 +144,28 @@ export default function InfluencerProfileSetup() {
   
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-950 via-purple-950 to-slate-900 flex flex-col items-center justify-center p-4 relative overflow-hidden">
+      <div className="absolute top-4 left-4 z-20">
+      <div className="flex items-center justify-center mb-2">
+          <span className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-blue-500">
+            Inverstra
+          </span>
+        </div>
+
+      </div>
       <Head>
         <title>Set Up Your Finfluencer Profile | Inverstra</title>
         <meta name="description" content="Create your Finfluencer profile on Inverstra" />
       </Head>
       
-      {/* Abstract background elements */}
       <div className="absolute inset-0 overflow-hidden">
         <div className="absolute top-1/4 left-1/4 w-64 h-64 rounded-full bg-purple-500/10 blur-3xl"></div>
         <div className="absolute bottom-1/4 right-1/4 w-96 h-96 rounded-full bg-indigo-500/10 blur-3xl"></div>
         <div className="absolute top-1/2 left-1/2 w-48 h-48 rounded-full bg-violet-500/5 blur-3xl"></div>
       </div>
       
-      {/* Grid lines overlay */}
-      <div className="absolute inset-0 bg-[url('/grid.svg')] bg-center opacity-5"></div>
-      
-      <div className="text-center mb-8 relative z-10">
-        <div className="flex items-center justify-center mb-2">
-          <span className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-blue-500">
-            Inverstra
-          </span>
-        </div>
+      <div className="text-center mb-8 relative top-8 z-10">
         
-        <h1 className="text-3xl font-bold text-white mb-2">Create Your Finfluencer Profile</h1>
+        <h1 className="text-2xl font-bold text-white mb-2">Create Your Finfluencer Profile</h1>
         <p className="text-slate-300 max-w-lg">
           Showcase your expertise and build your Web3 reputation
         </p>
@@ -119,6 +187,32 @@ export default function InfluencerProfileSetup() {
           <CardContent className="p-8">
             {currentStep === 1 && (
               <>
+                {/* Name Input */}
+                <div className="mb-8">
+                  <div className="flex items-center mb-4">
+                    <User className="w-5 h-5 mr-2 text-purple-400" />
+                    <h2 className="text-xl font-medium text-white">Your Name</h2>
+                  </div>
+                  <p className="text-sm text-slate-400 mb-4">How you want to be known in the community</p>
+                  
+                  <div>
+                    <Input
+                      className={`bg-slate-800/80 border-slate-700 text-white focus:border-purple-500/50 ${
+                        errors.name ? 'border-red-500' : ''
+                      }`}
+                      placeholder="Enter your name or pseudonym"
+                      value={formData.name}
+                      onChange={handleNameChange}
+                    />
+                    {errors.name && (
+                      <p className="text-red-500 text-xs mt-1 flex items-center">
+                        <AlertCircle className="w-3 h-3 mr-1" />
+                        {errors.name}
+                      </p>
+                    )}
+                  </div>
+                </div>
+                
                 {/* Expertise Areas */}
                 <div className="mb-8">
                   <div className="flex items-center mb-4">
@@ -153,6 +247,12 @@ export default function InfluencerProfileSetup() {
                       </div>
                     ))}
                   </div>
+                  {errors.expertiseAreas && (
+                    <p className="text-red-500 text-xs mt-2 flex items-center">
+                      <AlertCircle className="w-3 h-3 mr-1" />
+                      {errors.expertiseAreas}
+                    </p>
+                  )}
                 </div>
                 
                 {/* Experience Background */}
@@ -164,15 +264,24 @@ export default function InfluencerProfileSetup() {
                   <p className="text-sm text-slate-400 mb-4">Share your financial expertise and credentials</p>
                   
                   <Textarea
-                    className="bg-slate-800/80 border-slate-700 text-white resize-none focus:border-purple-500/50"
+                    className={`bg-slate-800/80 border-slate-700 text-white resize-none focus:border-purple-500/50 ${
+                      errors.experienceBackground ? 'border-red-500' : ''
+                    }`}
                     placeholder="Tell us about your background in finance, trading experience, certifications, etc."
                     rows={4}
                     value={formData.experienceBackground}
                     onChange={handleExperienceChange}
                   />
-                  <p className="text-xs text-slate-400 mt-2">
-                    *You'll be able to verify credentials (CA, CFA, MBA etc.) later
-                  </p>
+                  {errors.experienceBackground ? (
+                    <p className="text-red-500 text-xs mt-1 flex items-center">
+                      <AlertCircle className="w-3 h-3 mr-1" />
+                      {errors.experienceBackground}
+                    </p>
+                  ) : (
+                    <p className="text-xs text-slate-400 mt-2">
+                      *You'll be able to verify credentials (CA, CFA, MBA etc.) later
+                    </p>
+                  )}
                 </div>
               </>
             )}
@@ -213,8 +322,13 @@ export default function InfluencerProfileSetup() {
                       </div>
                     ))}
                   </div>
+                  {errors.contentStyle && (
+                    <p className="text-red-500 text-xs mt-2 flex items-center">
+                      <AlertCircle className="w-3 h-3 mr-1" />
+                      {errors.contentStyle}
+                    </p>
+                  )}
                 </div>
-                
               </>
             )}
             
@@ -249,12 +363,12 @@ export default function InfluencerProfileSetup() {
               <CardContent className="p-6">
                 <div className="flex items-center mb-6">
                   <div className="w-16 h-16 rounded-full bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center text-white text-xl font-bold">
-                    {/* Example avatar placeholder with initials */}
-                    FI
+                    {/* Avatar with initials from user's name */}
+                    {formData.name ? formData.name.charAt(0).toUpperCase() : 'FI'}
                   </div>
                   <div className="ml-4">
-                    <h4 className="text-white font-medium">Web3.Investor</h4>
-                    <p className="text-sm text-slate-400">0x71a2...3e5f</p>
+                    <h4 className="text-white font-medium">{formData.name || 'Your Name'}</h4>
+                    <p className="text-sm text-slate-400">{formatAddress(walletAddress)}</p>
                     <div className="flex items-center mt-1">
                       <div className="w-2 h-2 rounded-full bg-green-500 mr-1"></div>
                       <span className="text-xs text-green-500">Verified Creator</span>
@@ -307,30 +421,6 @@ export default function InfluencerProfileSetup() {
                   </div>
                 )}
                 
-                {formData.languages.length > 0 && (
-                  <div className="mb-6">
-                    <h5 className="text-xs uppercase text-slate-500 mb-2">Languages</h5>
-                    <div className="flex flex-wrap gap-2">
-                      {formData.languages.map(lang => (
-                        <span 
-                          key={lang} 
-                          className="text-xs px-2 py-1 rounded-full bg-slate-800 border border-slate-700 text-slate-300"
-                        >
-                          {lang === 'english' && 'English'}
-                          {lang === 'hindi' && 'Hindi'}
-                          {lang === 'bengali' && 'Bengali'}
-                          {lang === 'tamil' && 'Tamil'}
-                          {lang === 'telugu' && 'Telugu'}
-                          {lang === 'marathi' && 'Marathi'}
-                          {lang === 'gujarati' && 'Gujarati'}
-                          {lang === 'kannada' && 'Kannada'}
-                          {lang === 'malayalam' && 'Malayalam'}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                )}
-                
                 {formData.experienceBackground && (
                   <div>
                     <h5 className="text-xs uppercase text-slate-500 mb-2">Background</h5>
@@ -362,7 +452,7 @@ export default function InfluencerProfileSetup() {
       </div>
       
       <footer className="mt-8 text-center text-slate-500 text-sm relative z-10">
-        <p>Connected wallet: 0x71a2...3e5f</p>
+        <p>Connected wallet: {formatAddress(walletAddress)}</p>
       </footer>
     </div>
   );

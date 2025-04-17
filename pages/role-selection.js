@@ -1,22 +1,22 @@
-// pages/role-selection.js
 import { useState, useEffect } from 'react';
 import Head from 'next/head';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { BookOpen, LightbulbIcon, ChevronRight, ArrowLeft } from 'lucide-react';
+import { Home } from 'lucide-react';
+
 
 export default function RoleSelection() {
   const [selectedRole, setSelectedRole] = useState(null);
   const [walletAddress, setWalletAddress] = useState('');
   
-  // Get wallet address from localStorage on component mount
+//to get wallet address
   useEffect(() => {
     const connectedWallet = localStorage.getItem('connectedWalletAddress');
     if (connectedWallet) {
       setWalletAddress(connectedWallet);
     } else {
-      // Redirect to wallet connect page if no wallet is connected
       window.location.href = '/connect-wallet';
     }
   }, []);
@@ -25,7 +25,7 @@ export default function RoleSelection() {
     setSelectedRole(role);
   };
 
-  // Format address for display
+  
   const formatAddress = (address) => {
     if (!address) return "";
     return `${address.substring(0, 6)}...${address.substring(address.length - 4)}`;
@@ -33,22 +33,29 @@ export default function RoleSelection() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-blue-950 flex flex-col items-center justify-center p-4 relative overflow-hidden">
+    
+<div className="absolute top-4 left-4 z-20">
+ <Link href="/">
+ <Button variant="ghost" size="icon" className="text-white hover:text-blue-400">
+ <Home className="w-10 h-10" />
+ </Button>
+ </Link>
+</div>
+
       <Head>
         <title>Choose Your Role | Inverstra</title>
         <meta name="description" content="Choose how you want to engage with the Inverstra platform" />
       </Head>
       
-      {/* Abstract background elements */}
+      {/* background elements */}
       <div className="absolute inset-0 overflow-hidden">
         <div className="absolute top-1/4 left-1/4 w-64 h-64 rounded-full bg-blue-500/10 blur-3xl"></div>
         <div className="absolute bottom-1/4 right-1/4 w-96 h-96 rounded-full bg-purple-500/10 blur-3xl"></div>
         <div className="absolute top-1/2 left-1/2 w-48 h-48 rounded-full bg-cyan-500/5 blur-3xl"></div>
       </div>
       
-      {/* Grid lines overlay */}
       <div className="absolute inset-0 bg-[url('/grid.svg')] bg-center opacity-5"></div>
       
-      {/* Back link positioned at top right */}
       <div className="absolute top-6 right-6 z-20"> 
         <Link href="/wallet-connect" className="text-slate-400 hover:text-white flex items-center text-sm">
           <ArrowLeft className="w-4 h-4 mr-1" />
@@ -106,7 +113,7 @@ export default function RoleSelection() {
           </div>
         </div>
         
-        {/* Mobile divider */}
+        {/* for mobile view */}
         <div className="md:hidden flex items-center justify-center py-2">
           <span className="text-slate-400">or</span>
         </div>

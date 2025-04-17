@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-
+import React, { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { ethers } from "ethers";
 import { contractABI } from "./abi";
 import { contractAddress } from "./contractAddress";
@@ -24,15 +24,6 @@ import {
   SelectTrigger, 
   SelectValue 
 } from '@/components/ui/select';
-// import { 
-//   Form, 
-//   FormControl, 
-//   FormDescription, 
-//   FormField, 
-//   FormItem, 
-//   FormLabel, 
-//   FormMessage 
-// } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
@@ -51,17 +42,23 @@ import {
   Globe, 
   Settings, 
   Star, 
-  Link, 
   Wand2, 
   Share2, 
-  AlertCircle
+  AlertCircle,
+  User
 } from 'lucide-react';
-//import { toast } from '@/components/ui/use-toast';
 
 const CreatePredictionPage = () => {
   const [activeTab, setActiveTab] = useState('setup');
+  const [userName, setUserName] = useState('');
   
-  // Initialize form with useState instead of react-hook-form
+  // Get user name from local storage
+  useEffect(() => {
+    const storedName = localStorage.getItem('userName') || 'Anonymous';
+    setUserName(storedName);
+  }, []);
+  
+  // Initialize form with useState and validation errors
   const [formData, setFormData] = useState({
     community: '',
     category: '',
@@ -73,24 +70,119 @@ const CreatePredictionPage = () => {
     reasoning: '',
     confirmed: false,
   });
+  
+  // Validation errors state
+  const [errors, setErrors] = useState({
+    community: '',
+    category: '',
+    asset: '',
+    targetPrice: '',
+    deadline: '',
+    reasoning: '',
+  });
 
   const handleChange = (name, value) => {
     setFormData({
       ...formData,
       [name]: value,
     });
+    
+    // Clear error when field is updated
+    if (errors[name]) {
+      setErrors({
+        ...errors,
+        [name]: ''
+      });
+    }
+  };
+  
+  // Validate setup form fields
+  const validateSetupFields = () => {
+    let isValid = true;
+    const newErrors = { ...errors };
+    
+    if (!formData.community) {
+      newErrors.community = 'Please select a community';
+      isValid = false;
+    }
+    
+    if (!formData.category) {
+      newErrors.category = 'Please select a category';
+      isValid = false;
+    }
+    
+    if (!formData.asset) {
+      newErrors.asset = 'Please select an asset';
+      isValid = false;
+    }
+    
+    if (!formData.targetPrice) {
+      newErrors.targetPrice = 'This field is required';
+      isValid = false;
+    } else if (formData.predictionType !== 'event') {
+      // Validate if number for price target and percentage types
+      if (!/^-?\d*\.?\d+%?$/.test(formData.targetPrice)) {
+        newErrors.targetPrice = 'Please enter a valid number';
+        isValid = false;
+      }
+    }
+    
+    if (!formData.deadline) {
+      newErrors.deadline = 'Please select a deadline';
+      isValid = false;
+    } else {
+      const selectedDate = new Date(formData.deadline);
+      const today = new Date();
+      if (selectedDate <= today) {
+        newErrors.deadline = 'Deadline must be in the future';
+        isValid = false;
+      }
+    }
+    
+    setErrors(newErrors);
+    return isValid;
+  };
+  
+  const validateReasoningFields = () => {
+    let isValid = true;
+    const newErrors = { ...errors };
+    
+    if (!formData.reasoning || formData.reasoning.trim().length < 20) {
+      newErrors.reasoning = 'Please provide detailed reasoning (at least 20 characters)';
+      isValid = false;
+    }
+    
+    setErrors(newErrors);
+    return isValid;
+  };
+  
+  const handleTabChange = (nextTab) => {
+    if (activeTab === 'setup' && nextTab === 'reasoning') {
+      if (!validateSetupFields()) return;
+    }
+    
+    if (activeTab === 'reasoning' && nextTab === 'preview') {
+      if (!validateReasoningFields()) return;
+    }
+    
+    setActiveTab(nextTab);
   };
   
   const handleSubmit = async (e) => {
     e.preventDefault();
 
+    if (!formData.confirmed) {
+      alert("Please confirm your submission");
+      return;
+    }
+
     if (!window.ethereum) return alert("MetaMask is required.");
 
-    const provider = new ethers.BrowserProvider(window.ethereum);
-    const signer = await provider.getSigner();
-    const contract = new ethers.Contract(contractAddress, contractABI, signer);
-
     try {
+      const provider = new ethers.BrowserProvider(window.ethereum);
+      const signer = await provider.getSigner();
+      const contract = new ethers.Contract(contractAddress, contractABI, signer);
+
       const tx = await contract.submitForm(
         formData.community,
         formData.category,
@@ -103,9 +195,10 @@ const CreatePredictionPage = () => {
         formData.confirmed
       );
       await tx.wait();
-      alert("Prediction submitted!");
+      alert("Prediction submitted successfully!");
     } catch (err) {
       console.error("Transaction failed:", err);
+      alert("Transaction failed: " + (err.message || "Unknown error"));
     }
   };
   
@@ -122,27 +215,33 @@ const CreatePredictionPage = () => {
   
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-purple-950 to-gray-900 p-4 md:p-8">
-      {/* Breadcrumb Navigation */}
-      <div className="flex items-center text-gray-400 mb-6">
-        <Home size={16} className="mr-2" />
-        <span className="mr-2">Dashboard</span>
-        <ChevronRight size={16} className="mr-2" />
-        <span className="text-cyan-400">Create Prediction</span>
+      {/* Header with user name */}
+      <div className="flex justify-between items-center mb-6">
+        <div className="flex items-center text-gray-400">
+          <Home size={16} className="mr-2" />
+          <span className="mr-2">Dashboard</span>
+          <ChevronRight size={16} className="mr-2" />
+          <span className="text-cyan-400">Create Prediction</span>
+        </div>
+        <div className="flex items-center bg-gray-800/70 rounded-full px-3 py-1 text-cyan-300">
+          <User size={16} className="mr-2" />
+          <span>{userName}'s Next Prediction</span>
+        </div>
       </div>
       
       {/* Progress Steps */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="grid grid-cols-4 mb-8">
-          <TabsTrigger value="setup" className="data-[state=active]:bg-cyan-800 data-[state=active]:text-white">
+          <TabsTrigger value="setup" className="data-[state=active]:bg-cyan-800 data-[state=active]:text-white text-black">
             Setup
           </TabsTrigger>
-          <TabsTrigger value="reasoning" className="data-[state=active]:bg-cyan-800 data-[state=active]:text-white">
+          <TabsTrigger value="reasoning" className="data-[state=active]:bg-cyan-800 data-[state=active]:text-white text-black">
             Reasoning
           </TabsTrigger>
-          <TabsTrigger value="preview" className="data-[state=active]:bg-cyan-800 data-[state=active]:text-white">
+          <TabsTrigger value="preview" className="data-[state=active]:bg-cyan-800 data-[state=active]:text-white text-black">
             Preview
           </TabsTrigger>
-          <TabsTrigger value="submit" className="data-[state=active]:bg-cyan-800 data-[state=active]:text-white">
+          <TabsTrigger value="submit" className="data-[state=active]:bg-cyan-800 data-[state=active]:text-white text-black">
             Submit
           </TabsTrigger>
         </TabsList>
@@ -163,7 +262,7 @@ const CreatePredictionPage = () => {
                   <TabsContent value="setup" className="space-y-6">
                     {/* Community Selector */}
                     <div>
-                      <label className="block text-white mb-2">Choose your DAO community</label>
+                      <label className="block text-white mb-2">Choose your DAO community*</label>
                       <Select 
                         onValueChange={(value) => handleChange('community', value)}
                         value={formData.community}
@@ -171,12 +270,13 @@ const CreatePredictionPage = () => {
                         <SelectTrigger className="bg-gray-800 border-gray-700 text-white">
                           <SelectValue placeholder="Select community" />
                         </SelectTrigger>
-                        <SelectContent className="bg-gray-800 border-gray-700">
+                        <SelectContent className="bg-gray-800 border-gray-700 text-white">
                           <SelectItem value="cryptovisors">CryptoVisors DAO</SelectItem>
                           <SelectItem value="marketoracles">Market Oracles</SelectItem>
                           <SelectItem value="foresight">Foresight Collective</SelectItem>
                         </SelectContent>
                       </Select>
+                      {errors.community && <p className="text-red-500 text-sm mt-1">{errors.community}</p>}
                       <p className="text-gray-500 text-sm mt-1">
                         Only members of this DAO can vote on your prediction
                       </p>
@@ -184,7 +284,7 @@ const CreatePredictionPage = () => {
                     
                     {/* Category Selector */}
                     <div>
-                      <label className="block text-white mb-2">Category</label>
+                      <label className="block text-white mb-2">Category*</label>
                       <Select 
                         onValueChange={(value) => handleChange('category', value)}
                         value={formData.category}
@@ -225,19 +325,20 @@ const CreatePredictionPage = () => {
                           </SelectItem>
                         </SelectContent>
                       </Select>
+                      {errors.category && <p className="text-red-500 text-sm mt-1">{errors.category}</p>}
                     </div>
                     
                     {/* Asset Picker */}
                     <div>
-                      <label className="block text-white mb-2">Asset</label>
+                      <label className="block text-white mb-2">Asset*</label>
                       <Select 
                         onValueChange={(value) => handleChange('asset', value)}
                         value={formData.asset}
                       >
-                        <SelectTrigger className="bg-gray-800 border-gray-700">
+                        <SelectTrigger className="bg-gray-800 border-gray-700 text-white">
                           <SelectValue placeholder="Select asset" />
                         </SelectTrigger>
-                        <SelectContent className="bg-gray-800 border-gray-700">
+                        <SelectContent className="bg-gray-800 border-gray-700 text-white">
                           <SelectItem value="AAPL">AAPL - Apple Inc.</SelectItem>
                           <SelectItem value="BTC">BTC - Bitcoin</SelectItem>
                           <SelectItem value="ETH">ETH - Ethereum</SelectItem>
@@ -245,16 +346,17 @@ const CreatePredictionPage = () => {
                           <SelectItem value="GOLD">GOLD - Gold</SelectItem>
                         </SelectContent>
                       </Select>
+                      {errors.asset && <p className="text-red-500 text-sm mt-1">{errors.asset}</p>}
                     </div>
                     
                     {/* Prediction Type */}
                     <div>
-                      <label className="block text-white mb-2">Prediction Type</label>
+                      <label className="block text-white mb-2">Prediction Type*</label>
                       <div className="grid grid-cols-3 gap-2">
                         <Button 
                           type="button"
                           variant={formData.predictionType === 'priceTarget' ? 'default' : 'outline'}
-                          className={formData.predictionType === 'priceTarget' ? 'bg-cyan-800 hover:bg-cyan-700' : 'bg-gray-800 hover:bg-gray-700 border-gray-700'}
+                          className={formData.predictionType === 'priceTarget' ? 'bg-cyan-800 hover:bg-cyan-700' : 'bg-gray-800 hover:bg-gray-700 border-gray-700 text-white'}
                           onClick={() => handleChange('predictionType', 'priceTarget')}
                         >
                           Will reach price X
@@ -262,7 +364,7 @@ const CreatePredictionPage = () => {
                         <Button 
                           type="button"
                           variant={formData.predictionType === 'percentage' ? 'default' : 'outline'}
-                          className={formData.predictionType === 'percentage' ? 'bg-cyan-800 hover:bg-cyan-700' : 'bg-gray-800 hover:bg-gray-700 border-gray-700'}
+                          className={formData.predictionType === 'percentage' ? 'bg-cyan-800 hover:bg-cyan-700' : 'bg-gray-800 hover:bg-gray-700 border-gray-700 text-white'}
                           onClick={() => handleChange('predictionType', 'percentage')}
                         >
                           % change
@@ -270,7 +372,7 @@ const CreatePredictionPage = () => {
                         <Button 
                           type="button"
                           variant={formData.predictionType === 'event' ? 'default' : 'outline'}
-                          className={formData.predictionType === 'event' ? 'bg-cyan-800 hover:bg-cyan-700' : 'bg-gray-800 hover:bg-gray-700 border-gray-700'}
+                          className={formData.predictionType === 'event' ? 'bg-cyan-800 hover:bg-cyan-700' : 'bg-gray-800 hover:bg-gray-700 border-gray-700 text-white'}
                           onClick={() => handleChange('predictionType', 'event')}
                         >
                           Event
@@ -281,34 +383,50 @@ const CreatePredictionPage = () => {
                     {/* Target Input */}
                     <div>
                       <label className="block text-white mb-2">
-                        {formData.predictionType === 'priceTarget' && 'Target Price'}
-                        {formData.predictionType === 'percentage' && 'Percentage Change'}
-                        {formData.predictionType === 'event' && 'Event Description'}
+                        {formData.predictionType === 'priceTarget' && 'Target Price*'}
+                        {formData.predictionType === 'percentage' && 'Percentage Change*'}
+                        {formData.predictionType === 'event' && 'Event Description*'}
                       </label>
                       <Input 
-                        className="bg-gray-800 border-gray-700"
+                        className="bg-gray-800 border-gray-700 text-white"
                         placeholder={
                           formData.predictionType === 'priceTarget' ? 'Enter target price' :
                           formData.predictionType === 'percentage' ? 'Enter % (e.g. 5.2%)' :
                           'Describe the event'
                         }
                         value={formData.targetPrice}
-                        onChange={(e) => handleChange('targetPrice', e.target.value)}
+                        onChange={(e) => {
+                          // Validate input based on prediction type
+                          if (formData.predictionType === 'priceTarget') {
+                            // Allow only numbers and decimal points
+                            const value = e.target.value.replace(/[^0-9.]/g, '');
+                            handleChange('targetPrice', value);
+                          } else if (formData.predictionType === 'percentage') {
+                            // Allow numbers, decimal points, and % sign
+                            const value = e.target.value.replace(/[^0-9.%-]/g, '');
+                            handleChange('targetPrice', value);
+                          } else {
+                            // For event type, allow any text
+                            handleChange('targetPrice', e.target.value);
+                          }
+                        }}
                       />
+                      {errors.targetPrice && <p className="text-red-500 text-sm mt-1">{errors.targetPrice}</p>}
                     </div>
                     
                     {/* Deadline */}
                     <div>
-                      <label className="block text-white mb-2">Target Deadline</label>
+                      <label className="block text-white mb-2">Target Deadline*</label>
                       <div className="flex items-center">
                         <Input 
                           type="date" 
-                          className="bg-gray-800 border-gray-700"
+                          className="bg-gray-800 border-gray-700 text-white"
                           value={formData.deadline}
                           onChange={(e) => handleChange('deadline', e.target.value)}
                         />
                         <Calendar className="ml-2 text-gray-400" size={20} />
                       </div>
+                      {errors.deadline && <p className="text-red-500 text-sm mt-1">{errors.deadline}</p>}
                     </div>
                     
                     {/* Confidence Slider */}
@@ -342,7 +460,7 @@ const CreatePredictionPage = () => {
                     <div className="flex justify-end">
                       <Button 
                         type="button" 
-                        onClick={() => setActiveTab('reasoning')}
+                        onClick={() => handleTabChange('reasoning')}
                         className="bg-cyan-600 hover:bg-cyan-500"
                       >
                         Next: Add Reasoning
@@ -353,13 +471,14 @@ const CreatePredictionPage = () => {
                   <TabsContent value="reasoning" className="space-y-6">
                     {/* Reasoning Field */}
                     <div>
-                      <label className="block text-white mb-2">Your Reasoning</label>
+                      <label className="block text-white mb-2">Your Reasoning*</label>
                       <Textarea 
                         placeholder="What's your reasoning or supporting analysis?"
-                        className="min-h-40 bg-gray-800 border-gray-700"
+                        className="min-h-40 bg-gray-800 border-gray-700 text-white"
                         value={formData.reasoning}
                         onChange={(e) => handleChange('reasoning', e.target.value)}
                       />
+                      {errors.reasoning && <p className="text-red-500 text-sm mt-1">{errors.reasoning}</p>}
                       <p className="text-gray-500 text-sm mt-1">
                         Provide detailed analysis to support your prediction
                       </p>
@@ -406,7 +525,7 @@ const CreatePredictionPage = () => {
                       </Button>
                       <Button 
                         type="button" 
-                        onClick={() => setActiveTab('preview')}
+                        onClick={() => handleTabChange('preview')}
                         className="bg-cyan-600 hover:bg-cyan-500"
                       >
                         Next: Preview
@@ -422,6 +541,55 @@ const CreatePredictionPage = () => {
                         Review your prediction before submitting to your DAO community.
                       </AlertDescription>
                     </Alert>
+                    
+                    {/* Summary of prediction details */}
+                    <div className="space-y-4 bg-gray-800/30 rounded-md p-4">
+                      <h3 className="text-white font-medium">Prediction Summary</h3>
+                      <div className="grid grid-cols-2 gap-3 text-sm">
+                        <div>
+                          <span className="text-gray-400">Community:</span>
+                          <p className="text-white">{
+                            formData.community === 'cryptovisors' ? 'CryptoVisors DAO' : 
+                            formData.community === 'marketoracles' ? 'Market Oracles' : 
+                            formData.community === 'foresight' ? 'Foresight Collective' :
+                            'Not selected'
+                          }</p>
+                        </div>
+                        <div>
+                          <span className="text-gray-400">Category:</span>
+                          <p className="text-white">{
+                            formData.category === 'equities' ? 'Equities' : 
+                            formData.category === 'crypto' ? 'Crypto' : 
+                            formData.category === 'commodities' ? 'Commodities' : 
+                            formData.category === 'indices' ? 'Indices' : 
+                            formData.category === 'macro' ? 'Macro Events' : 
+                            'Not selected'
+                          }</p>
+                        </div>
+                        <div>
+                          <span className="text-gray-400">Asset:</span>
+                          <p className="text-white">{formData.asset || 'Not selected'}</p>
+                        </div>
+                        <div>
+                          <span className="text-gray-400">Prediction:</span>
+                          <p className="text-white">
+                            {formData.predictionType === 'priceTarget' && `Will reach ${formData.targetPrice || 'X'}`}
+                            {formData.predictionType === 'percentage' && `Will change by ${formData.targetPrice || 'X%'}`}
+                            {formData.predictionType === 'event' && `Will ${formData.targetPrice || 'event'}`}
+                          </p>
+                        </div>
+                        <div>
+                          <span className="text-gray-400">By:</span>
+                          <p className="text-white">{formData.deadline || 'No deadline set'}</p>
+                        </div>
+                        <div>
+                          <span className="text-gray-400">Confidence:</span>
+                          <p className={getConfidenceColor(formData.confidence)}>
+                            {formData.confidence}/5
+                          </p>
+                        </div>
+                      </div>
+                    </div>
                     
                     <div className="flex justify-between">
                       <Button 
@@ -444,6 +612,14 @@ const CreatePredictionPage = () => {
                   
                   <TabsContent value="submit" className="space-y-6">
                     {/* Confirmation */}
+                    <Alert className="border-cyan-500/20 bg-cyan-500/10">
+                      <AlertCircle className="h-4 w-4 text-cyan-400" />
+                      <AlertTitle className="text-cyan-400">Almost there!</AlertTitle>
+                      <AlertDescription className="text-cyan-200">
+                        Your prediction will be submitted to the blockchain and shared with your DAO community.
+                      </AlertDescription>
+                    </Alert>
+                    
                     <div className="flex flex-row items-start space-x-3 space-y-0 rounded-md border border-gray-700 p-4">
                       <Checkbox
                         checked={formData.confirmed}
@@ -509,7 +685,7 @@ const CreatePredictionPage = () => {
                           formData.community === 'foresight' ? 'Foresight Collective' :
                           formData.community : 'Your Community'}
                       </CardTitle>
-                      <CardDescription className="text-gray-400 text-xs">by Top Predictor • Verified</CardDescription>
+                      <CardDescription className="text-gray-400 text-xs">by {userName} • Verified</CardDescription>
                     </div>
                   </div>
                   <Badge className="bg-cyan-900/50 text-cyan-400 hover:bg-cyan-800/50">
@@ -577,11 +753,6 @@ const CreatePredictionPage = () => {
                       <Badge className="bg-gray-800/80 text-gray-400 hover:bg-gray-700">Short-term</Badge>
                     )}
                   </div>
-                  <div className="flex items-center gap-1">
-                    <Badge variant="outline" className="border-purple-800/30 text-purple-400 bg-purple-900/20">
-                      Difficulty: Medium
-                    </Badge>
-                  </div>
                 </div>
               </CardFooter>
             </Card>
@@ -590,13 +761,16 @@ const CreatePredictionPage = () => {
             <div className="md:hidden fixed bottom-4 right-4 left-4">
               <Button 
                 type="button" 
-                onClick={() => setActiveTab('submit')}
+                onClick={() => validateSetupFields() && validateReasoningFields() && setActiveTab('submit')}
                 className="w-full bg-gradient-to-r from-cyan-600 to-purple-600"
               >
                 Continue to Submit
               </Button>
             </div>
           </div>
+      <Link href="/influencer/community-hub">
+      <Button>Redirect to communtiy</Button>
+      </Link>
         </div>
       </Tabs>
     </div>

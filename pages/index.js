@@ -1,4 +1,3 @@
-// pages/index.js
 import Head from 'next/head';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
@@ -77,6 +76,7 @@ export default function Home() {
               Inverstra lets you explore, verify, and follow financial strategies from curated Web3 communities using AI + blockchain transparency.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <Link href="/wallet-connect">
               <Button 
                 onClick={handleConnectWallet} 
                 className="bg-blue-600 hover:bg-blue-700 text-lg py-6 px-8"
@@ -85,15 +85,18 @@ export default function Home() {
                 <Wallet className="w-5 h-5 mr-2" />
                 {isPending ? "Connecting..." : "Connect Wallet"}
               </Button>
-              <Button variant="outline" className="border-blue-400 text-blue-400 hover:bg-blue-950 text-lg py-6 px-8">
+            </Link>
+
+              {/* <Button variant="outline" className="border-blue-400 text-blue-400 hover:bg-blue-950 text-lg py-6 px-8">
                 Explore Strategies <ChevronRight className="w-5 h-5 ml-1" />
-              </Button>
+              </Button> */}
+
             </div>
           </div>
         </section>
 
         {/* Problem Statement */}
-        <section className="bg-slate-900 py-20">
+        <section className="bg-slate-800 py-20">
           <div className="container mx-auto px-4">
             <h2 className="text-3xl md:text-4xl font-bold mb-16 text-center">
               The <span className="text-red-400">Problem</span> With Investment Advice Today
@@ -103,7 +106,7 @@ export default function Home() {
               <div className="flex flex-col items-center text-center">
                 <div className="relative mb-6">
                   <div className="w-32 h-32">
-                    <Progress value={82} className="h-32 w-32 rounded-full" indicatorColor="bg-red-500" />
+                    <Progress value={82} className="h-32 w-32 rounded-full border-4 border-white"/>
                   </div>
                   <div className="absolute inset-0 flex items-center justify-center">
                     <span className="text-2xl font-bold">82%</span>
@@ -118,7 +121,7 @@ export default function Home() {
               <div className="flex flex-col items-center text-center">
                 <div className="relative mb-6">
                   <div className="w-32 h-32">
-                    <Progress value={65} className="h-32 w-32 rounded-full" indicatorColor="bg-red-500" />
+                    <Progress value={65} className="h-32 w-32 rounded-full border-4 border-white" indicatorColor="bg-red-500" />
                   </div>
                   <div className="absolute inset-0 flex items-center justify-center">
                     <span className="text-2xl font-bold">₹7000Cr+</span>
@@ -133,7 +136,7 @@ export default function Home() {
               <div className="flex flex-col items-center text-center">
                 <div className="relative mb-6">
                   <div className="w-32 h-32">
-                    <Progress value={91} className="h-32 w-32 rounded-full" indicatorColor="bg-red-500" />
+                    <Progress value={91} className="h-32 w-32 rounded-full border-4 border-white" indicatorColor="bg-red-500" />
                   </div>
                   <div className="absolute inset-0 flex items-center justify-center">
                     <span className="text-2xl font-bold">91%</span>
@@ -161,8 +164,8 @@ export default function Home() {
                   <div className="w-16 h-16 rounded-full bg-blue-500/10 flex items-center justify-center mb-6">
                     <Shield className="w-8 h-8 text-blue-400" />
                   </div>
-                  <h3 className="text-xl font-semibold mb-2">AI Risk Analyzer</h3>
-                  <p className="text-slate-300">
+                  <h3 className="text-xl font-semibold mb-2 text-white">AI Risk Analyzer</h3>
+                  <p className="text-slate-500">
                     Quickly see if an investment tip is high-risk, medium or safe with our advanced AI analysis
                   </p>
                 </CardContent>
@@ -173,8 +176,8 @@ export default function Home() {
                   <div className="w-16 h-16 rounded-full bg-purple-500/10 flex items-center justify-center mb-6">
                     <Lock className="w-8 h-8 text-purple-400" />
                   </div>
-                  <h3 className="text-xl font-semibold mb-2">Web3 Trust</h3>
-                  <p className="text-slate-300">
+                  <h3 className="text-xl font-semibold mb-2 text-white">Web3 Trust</h3>
+                  <p className="text-slate-500">
                     Only verified communities can publish tips, with all actions transparently stored on-chain
                   </p>
                 </CardContent>
@@ -185,8 +188,8 @@ export default function Home() {
                   <div className="w-16 h-16 rounded-full bg-green-500/10 flex items-center justify-center mb-6">
                     <TrendingUp className="w-8 h-8 text-green-400" />
                   </div>
-                  <h3 className="text-xl font-semibold mb-2">Performance History</h3>
-                  <p className="text-slate-300">
+                  <h3 className="text-xl font-semibold mb-2 text-white">Performance History</h3>
+                  <p className="text-slate-500">
                     Tips and communities earn reputation based on past accuracy, building trust over time
                   </p>
                 </CardContent>
@@ -261,8 +264,8 @@ export default function Home() {
                       <span className="text-sm text-slate-300">Verified</span>
                     </div>
                   </div>
-                  <h3 className="text-lg font-semibold mb-2">Long-term ETF in Green Energy Tech</h3>
-                  <p className="text-slate-300 text-sm mb-4">
+                  <h3 className="text-lg font-semibold mb-2 text-white">Long-term ETF in Green Energy Tech</h3>
+                  <p className="text-slate-500 text-sm mb-4">
                     Clean energy ETFs show promising long-term growth with reduced volatility...
                   </p>
                   <div className="flex justify-between items-center">
@@ -291,8 +294,8 @@ export default function Home() {
                       <span className="text-sm text-slate-300">Verified</span>
                     </div>
                   </div>
-                  <h3 className="text-lg font-semibold mb-2">Mid-cap Tech Stock Analysis</h3>
-                  <p className="text-slate-300 text-sm mb-4">
+                  <h3 className="text-lg font-semibold mb-2 text-white">Mid-cap Tech Stock Analysis</h3>
+                  <p className="text-slate-500 text-sm mb-4">
                     Undervalued mid-cap technology stocks showing strong fundamentals...
                   </p>
                   <div className="flex justify-between items-center">
@@ -321,8 +324,8 @@ export default function Home() {
                       <span className="text-sm text-slate-300">Verified</span>
                     </div>
                   </div>
-                  <h3 className="text-lg font-semibold mb-2">Emerging Market DeFi Opportunity</h3>
-                  <p className="text-slate-300 text-sm mb-4">
+                  <h3 className="text-lg font-semibold mb-2 text-white">Emerging Market DeFi Opportunity</h3>
+                  <p className="text-slate-500 text-sm mb-4">
                     Emerging DeFi protocols showing significant growth potential but higher risk...
                   </p>
                   <div className="flex justify-between items-center">
@@ -339,12 +342,6 @@ export default function Home() {
                   </Button>
                 </CardContent>
               </Card>
-            </div>
-
-            <div className="text-center mt-10">
-              <Button variant="outline" className="border-blue-400 text-blue-400 hover:bg-blue-950">
-                Explore All Communities <ChevronRight className="w-4 h-4 ml-1" />
-              </Button>
             </div>
           </div>
         </section>
@@ -412,8 +409,8 @@ export default function Home() {
                   <div className="w-16 h-16 rounded-full bg-blue-500/10 flex items-center justify-center mb-6">
                     <Brain className="w-8 h-8 text-blue-400" />
                   </div>
-                  <h3 className="text-xl font-semibold mb-2">AI Risk Analysis</h3>
-                  <p className="text-slate-300">
+                  <h3 className="text-xl font-semibold mb-2 text-white">AI Risk Analysis</h3>
+                  <p className="text-slate-500">
                     Every investment tip is AI-evaluated for risk factors, market conditions, and potential returns.
                   </p>
                 </CardContent>
@@ -424,8 +421,8 @@ export default function Home() {
                   <div className="w-16 h-16 rounded-full bg-purple-500/10 flex items-center justify-center mb-6">
                     <Lock className="w-8 h-8 text-purple-400" />
                   </div>
-                  <h3 className="text-xl font-semibold mb-2">On-Chain Transparency</h3>
-                  <p className="text-slate-300">
+                  <h3 className="text-xl font-semibold mb-2 text-white">On-Chain Transparency</h3>
+                  <p className="text-slate-500">
                     All actions are stored on-chain for full transparency and immutable record-keeping.
                   </p>
                 </CardContent>
@@ -436,8 +433,8 @@ export default function Home() {
                   <div className="w-16 h-16 rounded-full bg-green-500/10 flex items-center justify-center mb-6">
                     <Users className="w-8 h-8 text-green-400" />
                   </div>
-                  <h3 className="text-xl font-semibold mb-2">Community Governance</h3>
-                  <p className="text-slate-300">
+                  <h3 className="text-xl font-semibold mb-2 text-white">Community Governance</h3>
+                  <p className="text-slate-500">
                     No anonymous spam. Communities govern what gets published through reputation systems.
                   </p>
                 </CardContent>
@@ -516,8 +513,7 @@ export default function Home() {
       <div className="flex flex-wrap gap-8 mb-6 md:mb-0">
         <a href="#" className="text-slate-300 hover:text-blue-400">About</a>
         <a href="#" className="text-slate-300 hover:text-blue-400">Contact</a>
-        <a href="#" className="text-slate-300 hover:text-blue-400">GitHub</a>
-        <a href="#" className="text-slate-300 hover:text-blue-400">Terms</a>
+        <a href="https://github.com/kamakship18/HackIndia25_Maverick/tree/main/components/ui" className="text-slate-300 hover:text-blue-400">GitHub</a>
       </div>
       <div className="flex space-x-4">
         {/* Facebook Icon */}

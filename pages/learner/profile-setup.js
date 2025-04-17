@@ -1,5 +1,5 @@
 // pages/learner/profile-setup.js
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Head from 'next/head';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
@@ -8,24 +8,42 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Slider } from '@/components/ui/slider';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ChevronRight, BookOpen, Target, BarChart3, WalletCards, Globe, Home } from 'lucide-react';
+import { ChevronRight, BookOpen, Target, BarChart3, WalletCards, Globe, Home, User, AlertCircle } from 'lucide-react';
+
 
 export default function LearnerProfileSetup() {
   const router = useRouter();
   const [formData, setFormData] = useState({
-    experienceLevel: 'beginner',
+    name: '',
+    experienceLevel: '',
     areasOfInterest: [],
     primaryGoal: '',
-    riskTolerance: 'moderate',
+    riskTolerance: '',
     language: 'english'
   });
   
   const [currentStep, setCurrentStep] = useState(1);
+  const [errors, setErrors] = useState({});
   const totalSteps = 2;
+  
+  // Load data from localStorage on initial render
+  useEffect(() => {
+    const savedData = localStorage.getItem('inverstraUserProfile');
+    if (savedData) {
+      try {
+        const parsedData = JSON.parse(savedData);
+        setFormData(prev => ({...prev, ...parsedData}));
+      } catch (e) {
+        console.error("Error parsing saved profile data", e);
+      }
+    }
+  }, []);
   
   const handleExperienceChange = (value) => {
     setFormData(prev => ({ ...prev, experienceLevel: value }));
+    setErrors(prev => ({...prev, experienceLevel: ''}));
   };
   
   const handleInterestToggle = (interest) => {
@@ -34,29 +52,76 @@ export default function LearnerProfileSetup() {
         ? prev.areasOfInterest.filter(item => item !== interest)
         : [...prev.areasOfInterest, interest];
       
+      setErrors(prev => ({...prev, areasOfInterest: ''}));
       return { ...prev, areasOfInterest: updatedInterests };
     });
   };
   
   const handleGoalChange = (value) => {
     setFormData(prev => ({ ...prev, primaryGoal: value }));
+    setErrors(prev => ({...prev, primaryGoal: ''}));
   };
   
   const handleRiskChange = (value) => {
     setFormData(prev => ({ ...prev, riskTolerance: value }));
+    setErrors(prev => ({...prev, riskTolerance: ''}));
+  };
+  
+  const handleNameChange = (e) => {
+    setFormData(prev => ({ ...prev, name: e.target.value }));
+    if (e.target.value.trim()) {
+      setErrors(prev => ({...prev, name: ''}));
+    }
   };
   
   const handleLanguageChange = (value) => {
     setFormData(prev => ({ ...prev, language: value }));
   };
   
+  const validateStep = (step) => {
+    const newErrors = {};
+    
+    if (step === 1) {
+      if (!formData.name.trim()) {
+        newErrors.name = 'Please enter your name';
+      }
+      
+      if (!formData.experienceLevel) {
+        newErrors.experienceLevel = 'Please select your experience level';
+      }
+      
+      if (formData.areasOfInterest.length === 0) {
+        newErrors.areasOfInterest = 'Please select at least one area of interest';
+      }
+      
+      if (!formData.primaryGoal) {
+        newErrors.primaryGoal = 'Please select a primary goal';
+      }
+    }
+    
+    if (step === 2) {
+      if (!formData.riskTolerance) {
+        newErrors.riskTolerance = 'Please select your risk tolerance';
+      }
+    }
+    
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+  
   const handleContinue = () => {
-    if (currentStep < totalSteps) {
-      setCurrentStep(prev => prev + 1);
+    if (validateStep(currentStep)) {
+      if (currentStep < totalSteps) {
+        setCurrentStep(prev => prev + 1);
+      } else {
+        // Save data to localStorage and redirect to dashboard
+        localStorage.setItem('inverstraUserProfile', JSON.stringify(formData));
+        console.log('Profile data saved:', formData);
+        router.push('/learner/dashboard');
+      }
     } else {
-      // Save data and redirect to dashboard
-      console.log('Profile data:', formData);
-      router.push('/learner/dashboard');
+      // Show error notification
+      console.log('Please fill in all required fields');
     }
   };
   
@@ -84,6 +149,15 @@ export default function LearnerProfileSetup() {
       
       {/* Grid lines overlay */}
       <div className="absolute inset-0 bg-[url('/grid.svg')] bg-center opacity-5"></div>
+      
+      {/* Home button */}
+      <div className="absolute top-6 left-6 z-20">
+        <Link href="/">
+          <Button variant="ghost" className="p-2 text-slate-300 hover:text-white hover:bg-slate-800/50">
+            <Home className="w-5 h-5" />
+          </Button>
+        </Link>
+      </div>
       
       <div className="text-center mb-8 relative z-10">
         <div className="flex items-center justify-center mb-2">
@@ -113,6 +187,29 @@ export default function LearnerProfileSetup() {
         <CardContent className="p-8">
           {currentStep === 1 && (
             <>
+              {/* Name Input */}
+              <div className="mb-8">
+                <div className="flex items-center mb-4">
+                  <User className="w-5 h-5 mr-2 text-blue-400" />
+                  <h2 className="text-xl font-medium text-white">Your Name</h2>
+                </div>
+                <div className="relative">
+                  <Input
+                    type="text"
+                    placeholder="Enter your name" 
+                    value={formData.name}
+                    onChange={handleNameChange}
+                    className={`bg-slate-800/50 border-slate-700 text-white placeholder:text-slate-500 ${errors.name ? 'border-red-500' : 'focus:border-blue-500'}`}
+                  />
+                  {errors.name && (
+                    <div className="text-red-500 text-xs mt-1 flex items-center">
+                      <AlertCircle className="w-3 h-3 mr-1" />
+                      {errors.name}
+                    </div>
+                  )}
+                </div>
+              </div>
+              
               {/* Experience Level */}
               <div className="mb-8">
                 <div className="flex items-center mb-4">
@@ -127,7 +224,7 @@ export default function LearnerProfileSetup() {
                 >
                   <div className="flex flex-col items-center">
                     <div className="relative w-full h-full">
-                      <div className={`p-4 rounded-lg border border-slate-700 hover:border-blue-500/50 transition flex flex-col items-center justify-center text-center cursor-pointer ${formData.experienceLevel === 'beginner' ? 'bg-blue-900/30 border-blue-500/50' : 'bg-slate-800/50'}`}>
+                      <div className={`p-4 rounded-lg border hover:border-blue-500/50 transition flex flex-col items-center justify-center text-center cursor-pointer ${formData.experienceLevel === 'beginner' ? 'bg-blue-900/30 border-blue-500/50' : 'bg-slate-800/50 border-slate-700'} ${errors.experienceLevel ? 'border-red-500' : ''}`}>
                         <RadioGroupItem value="beginner" id="beginner" className="sr-only" />
                         <span className="text-xl mb-1">🌱</span>
                         <Label htmlFor="beginner" className="font-medium text-white">Beginner</Label>
@@ -138,7 +235,7 @@ export default function LearnerProfileSetup() {
                   
                   <div className="flex flex-col items-center">
                     <div className="relative w-full h-full">
-                      <div className={`p-4 rounded-lg border border-slate-700 hover:border-blue-500/50 transition flex flex-col items-center justify-center text-center cursor-pointer ${formData.experienceLevel === 'intermediate' ? 'bg-blue-900/30 border-blue-500/50' : 'bg-slate-800/50'}`}>
+                      <div className={`p-4 rounded-lg border hover:border-blue-500/50 transition flex flex-col items-center justify-center text-center cursor-pointer ${formData.experienceLevel === 'intermediate' ? 'bg-blue-900/30 border-blue-500/50' : 'bg-slate-800/50 border-slate-700'} ${errors.experienceLevel ? 'border-red-500' : ''}`}>
                         <RadioGroupItem value="intermediate" id="intermediate" className="sr-only" />
                         <span className="text-xl mb-1">📊</span>
                         <Label htmlFor="intermediate" className="font-medium text-white">Intermediate</Label>
@@ -149,7 +246,7 @@ export default function LearnerProfileSetup() {
                   
                   <div className="flex flex-col items-center">
                     <div className="relative w-full h-full">
-                      <div className={`p-4 rounded-lg border border-slate-700 hover:border-blue-500/50 transition flex flex-col items-center justify-center text-center cursor-pointer ${formData.experienceLevel === 'advanced' ? 'bg-blue-900/30 border-blue-500/50' : 'bg-slate-800/50'}`}>
+                      <div className={`p-4 rounded-lg border hover:border-blue-500/50 transition flex flex-col items-center justify-center text-center cursor-pointer ${formData.experienceLevel === 'advanced' ? 'bg-blue-900/30 border-blue-500/50' : 'bg-slate-800/50 border-slate-700'} ${errors.experienceLevel ? 'border-red-500' : ''}`}>
                         <RadioGroupItem value="advanced" id="advanced" className="sr-only" />
                         <span className="text-xl mb-1">🚀</span>
                         <Label htmlFor="advanced" className="font-medium text-white">Advanced</Label>
@@ -158,6 +255,13 @@ export default function LearnerProfileSetup() {
                     </div>
                   </div>
                 </RadioGroup>
+                
+                {errors.experienceLevel && (
+                  <div className="text-red-500 text-xs mt-1 flex items-center">
+                    <AlertCircle className="w-3 h-3 mr-1" />
+                    {errors.experienceLevel}
+                  </div>
+                )}
               </div>
               
               {/* Areas of Interest */}
@@ -168,7 +272,7 @@ export default function LearnerProfileSetup() {
                 </div>
                 <p className="text-sm text-slate-400 mb-4">Select all that apply to your investment interests</p>
                 
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                <div className={`grid grid-cols-2 md:grid-cols-3 gap-3 ${errors.areasOfInterest ? 'border border-red-500 p-2 rounded-md' : ''}`}>
                   {[
                     { id: 'stocks', label: 'Stocks/Equities', icon: '📈' },
                     { id: 'crypto', label: 'Crypto', icon: '🌐' },
@@ -191,6 +295,13 @@ export default function LearnerProfileSetup() {
                     </div>
                   ))}
                 </div>
+                
+                {errors.areasOfInterest && (
+                  <div className="text-red-500 text-xs mt-1 flex items-center">
+                    <AlertCircle className="w-3 h-3 mr-1" />
+                    {errors.areasOfInterest}
+                  </div>
+                )}
               </div>
               
               {/* Primary Investment Goal */}
@@ -206,7 +317,7 @@ export default function LearnerProfileSetup() {
                   onValueChange={handleGoalChange}
                 >
                   <div className="flex flex-col">
-                    <div className={`p-4 rounded-lg border border-slate-700 hover:border-blue-500/50 transition flex items-center cursor-pointer ${formData.primaryGoal === 'growth' ? 'bg-blue-900/30 border-blue-500/50' : 'bg-slate-800/50'}`}>
+                    <div className={`p-4 rounded-lg border hover:border-blue-500/50 transition flex items-center cursor-pointer ${formData.primaryGoal === 'growth' ? 'bg-blue-900/30 border-blue-500/50' : 'bg-slate-800/50 border-slate-700'} ${errors.primaryGoal ? 'border-red-500' : ''}`}>
                       <RadioGroupItem value="growth" id="growth" className="sr-only" />
                       <span className="text-xl mr-3">💹</span>
                       <div>
@@ -217,7 +328,7 @@ export default function LearnerProfileSetup() {
                   </div>
                   
                   <div className="flex flex-col">
-                    <div className={`p-4 rounded-lg border border-slate-700 hover:border-blue-500/50 transition flex items-center cursor-pointer ${formData.primaryGoal === 'income' ? 'bg-blue-900/30 border-blue-500/50' : 'bg-slate-800/50'}`}>
+                    <div className={`p-4 rounded-lg border hover:border-blue-500/50 transition flex items-center cursor-pointer ${formData.primaryGoal === 'income' ? 'bg-blue-900/30 border-blue-500/50' : 'bg-slate-800/50 border-slate-700'} ${errors.primaryGoal ? 'border-red-500' : ''}`}>
                       <RadioGroupItem value="income" id="income" className="sr-only" />
                       <span className="text-xl mr-3">💰</span>
                       <div>
@@ -228,7 +339,7 @@ export default function LearnerProfileSetup() {
                   </div>
                   
                   <div className="flex flex-col">
-                    <div className={`p-4 rounded-lg border border-slate-700 hover:border-blue-500/50 transition flex items-center cursor-pointer ${formData.primaryGoal === 'retirement' ? 'bg-blue-900/30 border-blue-500/50' : 'bg-slate-800/50'}`}>
+                    <div className={`p-4 rounded-lg border hover:border-blue-500/50 transition flex items-center cursor-pointer ${formData.primaryGoal === 'retirement' ? 'bg-blue-900/30 border-blue-500/50' : 'bg-slate-800/50 border-slate-700'} ${errors.primaryGoal ? 'border-red-500' : ''}`}>
                       <RadioGroupItem value="retirement" id="retirement" className="sr-only" />
                       <span className="text-xl mr-3">🧓</span>
                       <div>
@@ -238,6 +349,13 @@ export default function LearnerProfileSetup() {
                     </div>
                   </div>
                 </RadioGroup>
+                
+                {errors.primaryGoal && (
+                  <div className="text-red-500 text-xs mt-1 flex items-center">
+                    <AlertCircle className="w-3 h-3 mr-1" />
+                    {errors.primaryGoal}
+                  </div>
+                )}
               </div>
             </>
           )}
@@ -258,7 +376,7 @@ export default function LearnerProfileSetup() {
                   onValueChange={handleRiskChange}
                 >
                   <div className="flex flex-col">
-                    <div className={`p-4 rounded-lg border border-slate-700 hover:border-blue-500/50 transition flex items-center cursor-pointer ${formData.riskTolerance === 'conservative' ? 'bg-blue-900/30 border-blue-500/50' : 'bg-slate-800/50'}`}>
+                    <div className={`p-4 rounded-lg border hover:border-blue-500/50 transition flex items-center cursor-pointer ${formData.riskTolerance === 'conservative' ? 'bg-blue-900/30 border-blue-500/50' : 'bg-slate-800/50 border-slate-700'} ${errors.riskTolerance ? 'border-red-500' : ''}`}>
                       <RadioGroupItem value="conservative" id="conservative" className="sr-only" />
                       <span className="text-xl mr-3">🛡️</span>
                       <div>
@@ -269,7 +387,7 @@ export default function LearnerProfileSetup() {
                   </div>
                   
                   <div className="flex flex-col">
-                    <div className={`p-4 rounded-lg border border-slate-700 hover:border-blue-500/50 transition flex items-center cursor-pointer ${formData.riskTolerance === 'moderate' ? 'bg-blue-900/30 border-blue-500/50' : 'bg-slate-800/50'}`}>
+                    <div className={`p-4 rounded-lg border hover:border-blue-500/50 transition flex items-center cursor-pointer ${formData.riskTolerance === 'moderate' ? 'bg-blue-900/30 border-blue-500/50' : 'bg-slate-800/50 border-slate-700'} ${errors.riskTolerance ? 'border-red-500' : ''}`}>
                       <RadioGroupItem value="moderate" id="moderate" className="sr-only" />
                       <span className="text-xl mr-3">⚖️</span>
                       <div>
@@ -280,7 +398,7 @@ export default function LearnerProfileSetup() {
                   </div>
                   
                   <div className="flex flex-col">
-                    <div className={`p-4 rounded-lg border border-slate-700 hover:border-blue-500/50 transition flex items-center cursor-pointer ${formData.riskTolerance === 'aggressive' ? 'bg-blue-900/30 border-blue-500/50' : 'bg-slate-800/50'}`}>
+                    <div className={`p-4 rounded-lg border hover:border-blue-500/50 transition flex items-center cursor-pointer ${formData.riskTolerance === 'aggressive' ? 'bg-blue-900/30 border-blue-500/50' : 'bg-slate-800/50 border-slate-700'} ${errors.riskTolerance ? 'border-red-500' : ''}`}>
                       <RadioGroupItem value="aggressive" id="aggressive" className="sr-only" />
                       <span className="text-xl mr-3">🚀</span>
                       <div>
@@ -290,8 +408,14 @@ export default function LearnerProfileSetup() {
                     </div>
                   </div>
                 </RadioGroup>
+                
+                {errors.riskTolerance && (
+                  <div className="text-red-500 text-xs mt-1 flex items-center">
+                    <AlertCircle className="w-3 h-3 mr-1" />
+                    {errors.riskTolerance}
+                  </div>
+                )}
               </div>
-              
             </>
           )}
           
@@ -303,7 +427,6 @@ export default function LearnerProfileSetup() {
             >
               Back
             </Button>
-            <Link href ="/learner/dashboard"></Link>
             <Button 
               onClick={handleContinue}
               className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-500 hover:to-blue-600 text-white"

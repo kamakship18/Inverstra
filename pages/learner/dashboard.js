@@ -1,36 +1,47 @@
 import { useState, useEffect } from "react";
 import { ChevronRight, ChevronLeft, Sun, Moon, Wallet, Bell, Search, Check, Clock, X, ChevronDown, Share2, Calendar, Home, Compass, BookOpen, User } from "lucide-react";
 
-// Import community predictions from JSON file
 import communityPredictions from './communityPredictions.json';
 
 export default function Dashboard() {
   const [darkMode, setDarkMode] = useState(true);
   const [activeFilter, setActiveFilter] = useState("All");
   const [walletAddress, setWalletAddress] = useState("");
-  const userName = "Rahul";
   
-  // Get wallet address from localStorage on component mount
+  const [userName, setUserName] = useState("User");
+
+useEffect(() => {
+  try {
+    const savedData = localStorage.getItem('inverstraUserProfile');
+    if (savedData) {
+      const parsedData = JSON.parse(savedData);
+      if (parsedData.name) {
+        setUserName(parsedData.name);
+      }
+    }
+  } catch (e) {
+    console.error("Error retrieving user name from storage", e);
+  }
+}, []);
+
   useEffect(() => {
     const connectedWallet = localStorage.getItem('connectedWalletAddress');
     if (connectedWallet) {
       setWalletAddress(connectedWallet);
     } else {
-      // For demo purposes, we'll set a dummy address instead of redirecting
-      // In production: window.location.href = '/connect-wallet';
+     
       const dummyAddress = "0x71C7656EC7ab88b098defB751B7401B5f6d8976F";
       localStorage.setItem('connectedWalletAddress', dummyAddress);
       setWalletAddress(dummyAddress);
     }
   }, []);
 
-  // Format wallet address to show abbreviated version
   const formatAddress = (address) => {
     if (!address) return "";
     return `${address.substring(0, 6)}...${address.substring(address.length - 4)}`;
   };
 
-  // Filter predictions that have 70% more yes than no votes
+  // to filter predictions that have 70% more yes than no votes
   const filteredPredictions = communityPredictions.filter(pred => {
     const totalVotes = pred.votes.yes + pred.votes.no;
     const yesPercentage = (pred.votes.yes / totalVotes) * 100;
@@ -38,7 +49,6 @@ export default function Dashboard() {
     return yesPercentage > noPercentage;
   });
 
-  // Confidence stars renderer
   const ConfidenceDisplay = ({ level }) => {
     return (
       <div className="flex items-center">
@@ -55,7 +65,6 @@ export default function Dashboard() {
     );
   };
 
-  // Get card gradient based on category
   const getCategoryGradient = (category) => {
     const gradients = {
       "Equities": "from-blue-900 to-cyan-900",
@@ -68,7 +77,6 @@ export default function Dashboard() {
     return gradients[category] || gradients.default;
   };
 
-  // Get text color based on category
   const getCategoryTextColor = (category) => {
     const colors = {
       "Equities": "text-cyan-400",
@@ -81,7 +89,6 @@ export default function Dashboard() {
     return colors[category] || colors.default;
   };
 
-  // Get border glow color based on category for hover
   const getHoverGlowColor = (category) => {
     const glows = {
       "Equities": "group-hover:shadow-cyan-500/50",
@@ -94,13 +101,11 @@ export default function Dashboard() {
     return glows[category] || glows.default;
   };
 
-  // Prediction Card Component styled with gradients and hover effects
   const PredictionCard = ({ prediction }) => {
     const categoryColor = getCategoryTextColor(prediction.category);
     const categoryGradient = getCategoryGradient(prediction.category);
     const hoverGlow = getHoverGlowColor(prediction.category);
     
-    // Determine if the prediction is confirmed or pending
     const isConfirmed = prediction.confirmed || prediction.status === "confirmed";
     
     const statusDisplay = isConfirmed ? (
@@ -114,22 +119,17 @@ export default function Dashboard() {
       </div>
     );
 
-    // Format the display text based on prediction structure
     const displayText = prediction.predictionText || 
       (prediction.predictionType === "priceTarget" ? 
       `will reach ${prediction.targetPrice}` : 
       "will perform as predicted");
 
-    // Get the asset name
     const assetName = prediction.asset;
     
-    // Get reasoning text
     const reasoningText = prediction.reasoning;
-    
-    // Get difficulty level from prediction if available
+
     const difficultyLevel = prediction.difficulty || "Medium";
-    
-    // Determine time frame based on deadline if not provided
+
     const timeFrame = prediction.timeFrame || (() => {
       const deadline = new Date(prediction.deadline);
       const today = new Date();
@@ -142,10 +142,10 @@ export default function Dashboard() {
 
     return (
       <div className={`bg-gradient-to-br ${categoryGradient} rounded-xl border border-gray-800 mb-6 overflow-hidden group transition-all duration-300 hover:shadow-lg hover:shadow-[0_0_15px_rgba(0,0,0,0.3)] ${hoverGlow}`}>
-        {/* Header with creator info */}
+        {/* Header */}
         <div className="p-4 flex justify-between items-center">
           <div className="flex items-center">
-            {/* Avatar circle with first letter */}
+           
             <div className="h-10 w-10 bg-gradient-to-br from-purple-600 to-pink-500 rounded-full flex items-center justify-center mr-3 text-white font-bold">
               {prediction.creatorName ? prediction.creatorName.charAt(0) : "?"}
             </div>
@@ -168,7 +168,7 @@ export default function Dashboard() {
           </div>
         </div>
         
-        {/* Prediction content */}
+        {/* Prediction */}
         <div className="px-4 pt-2 pb-4">
           <h2 className="text-xl font-bold">
             <span className="text-white">{assetName}</span>{" "}
@@ -204,7 +204,6 @@ export default function Dashboard() {
           </div> */}
         </div>
         
-        {/* Status banner if pending */}
         {!isConfirmed && (
           <div className="bg-amber-900/30 text-amber-500 text-center py-1 text-sm">
             Pending Verification
@@ -226,25 +225,6 @@ export default function Dashboard() {
               </div>
             </div>
             
-            <div className="hidden md:flex items-center justify-center flex-1 space-x-8">
-              <a href="#" className="flex items-center text-white border-b-2 border-[#FF5F6D] px-1 py-2">
-                <Home size={18} className="mr-1" />
-                Feed
-              </a>
-              <a href="#" className="flex items-center text-gray-400 hover:text-white px-1 py-2">
-                <Compass size={18} className="mr-1" />
-                Discover
-              </a>
-              <a href="#" className="flex items-center text-gray-400 hover:text-white px-1 py-2">
-                <BookOpen size={18} className="mr-1" />
-                Learn
-              </a>
-              <a href="#" className="flex items-center text-gray-400 hover:text-white px-1 py-2">
-                <User size={18} className="mr-1" />
-                Profile
-              </a>
-            </div>
-            
             <div className="flex items-center space-x-4">
               <button className="hover:bg-gray-800 p-2 rounded-lg">
                 <Search size={20} />
@@ -260,12 +240,6 @@ export default function Dashboard() {
                   <span className="text-sm">Connect</span>
                 </button>
               )}
-              <button 
-                onClick={() => setDarkMode(!darkMode)}
-                className="hover:bg-gray-800 p-2 rounded-lg"
-              >
-                {darkMode ? <Sun size={20} /> : <Moon size={20} />}
-              </button>
             </div>
           </div>
         </div>
@@ -280,18 +254,6 @@ export default function Dashboard() {
             <div className="mb-8">
               <h1 className="text-3xl font-bold mb-1">👋 Welcome back, {userName}!</h1>
               <p className="text-gray-400">Here's what's trending in your network today.</p>
-              
-              <div className="mt-4 p-4 rounded-xl bg-gradient-to-r from-[#3A1C71] via-[#D76D77] to-[#FFAF7B] text-white">
-                <div className="flex justify-between items-center">
-                  <div>
-                    <h3 className="font-bold text-lg">Your Financial Fingerprint is growing!</h3>
-                    <p className="text-sm opacity-90">+12% accuracy this month</p>
-                  </div>
-                  <div className="h-12 w-12 rounded-full bg-white/20 flex items-center justify-center">
-                    <span className="text-xl">🚀</span>
-                  </div>
-                </div>
-              </div>
             </div>
             
             {/* Recent Predictions (Instagram-style) */}
