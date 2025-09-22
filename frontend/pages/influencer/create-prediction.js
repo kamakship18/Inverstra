@@ -1,5 +1,6 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter } from 'next/router';
+import Image from 'next/image';
 import { toast, Toaster } from 'react-hot-toast';
 
 import { ethers } from "ethers";
@@ -101,7 +102,7 @@ const CreatePredictionPage = () => {
   const [isValidating, setIsValidating] = useState(false);
   const [reasoningValidation, setReasoningValidation] = useState(null);
   
-  const handleChange = (name, value) => {
+  const handleChange = useCallback((name, value) => {
     setFormData({
       ...formData,
       [name]: value,
@@ -114,10 +115,10 @@ const CreatePredictionPage = () => {
         [name]: ''
       });
     }
-  };
+  }, [formData, errors]);
   
   // Fetch assets based on selected category
-  const fetchAssetsByCategory = async (category) => {
+  const fetchAssetsByCategory = useCallback(async (category) => {
     setIsLoadingAssets(true);
     try {
       let assets = [];
@@ -168,7 +169,7 @@ const CreatePredictionPage = () => {
     } finally {
       setIsLoadingAssets(false);
     }
-  };
+  }, [handleChange]); // useCallback dependency array
   
   // Validate prediction through AI APIs
   const validatePrediction = async () => {
@@ -381,7 +382,7 @@ const CreatePredictionPage = () => {
     if (formData.category) {
       fetchAssetsByCategory(formData.category);
     }
-  }, [formData.category]);
+  }, [formData.category, fetchAssetsByCategory]);
   
   // File upload handling
   const handleFileUpload = async (e) => {
@@ -839,10 +840,12 @@ const CreatePredictionPage = () => {
                                     <div className="flex justify-between items-start">
                                       <div className="flex items-start">
                                         {file.type.includes('image') ? (
-                                          <img 
+                                          <Image 
                                             src={file.preview} 
                                             alt={file.name} 
-                                            className="w-10 h-10 object-cover rounded mr-3"
+                                            width={40}
+                                            height={40}
+                                            className="object-cover rounded mr-3"
                                           />
                                         ) : (
                                           <FileText size={24} className="text-gray-400 mr-3" />
