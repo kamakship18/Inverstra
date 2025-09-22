@@ -5,7 +5,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
-import ThemeToggle from '@/components/ui/ThemeToggle';
+import Navbar from '@/components/layout/Navbar';
 
 import { 
   Wallet, 
@@ -36,36 +36,7 @@ export default function Home() {
         <link rel="icon" href="/favicon.ico" />
       </Head>
 
-      <header className="sticky top-0 z-40 backdrop-blur-md bg-white/60 dark:bg-black/60 border-b border-slate-200 dark:border-slate-800 shadow-sm">
-        <div className="container mx-auto px-4 py-4 flex justify-between items-center">
-          <div className="flex items-center">
-            <span className="text-2xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500">
-              Inverstra
-            </span>
-          </div>
-          <nav className="hidden md:flex space-x-8">
-            {['How It Works', 'Communities', "Who It's For"].map((item, idx) => (
-              <a
-                key={item}
-                href={`#${item.toLowerCase().replace(/ /g, '-')}`}
-                className="relative font-medium text-slate-700 dark:text-slate-200 hover:text-pink-500 dark:hover:text-pink-400 transition duration-200 px-2"
-              >
-                {item}
-                <span className="absolute left-0 -bottom-1 w-full h-0.5 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 scale-x-0 group-hover:scale-x-100 transition-transform origin-left duration-300"></span>
-              </a>
-            ))}
-          </nav>
-          <div className="flex items-center space-x-4">
-            <Link href="/wallet-connect">
-              <Button className="bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 hover:from-blue-600 hover:to-pink-600 text-white rounded-full px-6 py-2 font-semibold shadow-md">
-                <Wallet className="w-4 h-4 mr-2" />
-                Connect Wallet
-              </Button>
-            </Link>
-            <ThemeToggle />
-          </div>
-        </div>
-      </header>
+      <Navbar />
 
       <main>
         {/* Hero Section */}

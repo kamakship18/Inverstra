@@ -1,5 +1,8 @@
 import { useState, useEffect } from "react";
 import { ChevronRight, ChevronLeft, Sun, Moon, Wallet, Bell, Search, Check, Clock, X, ChevronDown, Share2, Calendar, Home, Compass, BookOpen, User } from "lucide-react";
+import Navbar from '@/components/layout/Navbar';
+import Head from 'next/head';
+import axios from 'axios';
 
 import communityPredictions from './communityPredictions.json';
 
@@ -11,17 +14,43 @@ export default function Dashboard() {
   const [userName, setUserName] = useState("User");
 
 useEffect(() => {
-  try {
-    const savedData = localStorage.getItem('inverstraUserProfile');
-    if (savedData) {
-      const parsedData = JSON.parse(savedData);
-      if (parsedData.name) {
-        setUserName(parsedData.name);
+  // Try to fetch user profile from the backend first
+  const fetchUserProfile = async () => {
+    try {
+      const walletAddress = localStorage.getItem('connectedWalletAddress');
+      if (walletAddress) {
+        setWalletAddress(walletAddress);
+        
+        const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5000';
+        const response = await axios.get(`${backendUrl}/api/learners/wallet/${walletAddress}`);
+        
+        if (response.data.success) {
+          const profileData = response.data.data;
+          setUserName(profileData.name);
+          
+          // Save to localStorage as backup
+          localStorage.setItem('inverstraUserProfile', JSON.stringify(profileData));
+        }
+      }
+    } catch (error) {
+      console.error("Error fetching profile from API:", error);
+      
+      // Fallback to localStorage
+      try {
+        const savedData = localStorage.getItem('inverstraUserProfile');
+        if (savedData) {
+          const parsedData = JSON.parse(savedData);
+          if (parsedData.name) {
+            setUserName(parsedData.name);
+          }
+        }
+      } catch (e) {
+        console.error("Error retrieving user name from storage", e);
       }
     }
-  } catch (e) {
-    console.error("Error retrieving user name from storage", e);
-  }
+  };
+  
+  fetchUserProfile();
 }, []);
 
   useEffect(() => {
@@ -215,38 +244,15 @@ useEffect(() => {
 
   return (
     <div className={`min-h-screen ${darkMode ? 'bg-[#1A132F] text-gray-100' : 'bg-gray-50 text-gray-900'}`}>
-      {/* Top Navigation */}
-      <nav className="sticky top-0 z-10 backdrop-blur-lg bg-[#1A132F]/90 border-b border-gray-800">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center">
-              <div className="text-xl font-bold bg-gradient-to-r from-[#FF5F6D] to-[#F9A826] text-transparent bg-clip-text">
-                Investra
-              </div>
-            </div>
-            
-            <div className="flex items-center space-x-4">
-              <button className="hover:bg-gray-800 p-2 rounded-lg">
-                <Search size={20} />
-              </button>
-              {walletAddress ? (
-                <div className="flex items-center bg-gray-800 text-gray-300 py-1.5 px-3 rounded-lg">
-                  <Wallet size={16} className="mr-1.5 text-[#FF5F6D]" />
-                  <span className="text-sm">{formatAddress(walletAddress)}</span>
-                </div>
-              ) : (
-                <button className="flex items-center bg-gradient-to-r from-purple-600 to-pink-500 hover:from-purple-700 hover:to-pink-600 text-white py-1.5 px-3 rounded-lg">
-                  <Wallet size={16} className="mr-1.5" />
-                  <span className="text-sm">Connect</span>
-                </button>
-              )}
-            </div>
-          </div>
-        </div>
-      </nav>
+      <Head>
+        <title>Learner Dashboard | Inverstra</title>
+        <meta name="description" content="View investment predictions and manage your learning journey" />
+      </Head>
+      
+      <Navbar />
 
       {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 lg:py-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 lg:py-8 mt-20">
         <div className="lg:grid lg:grid-cols-3 lg:gap-8">
           {/* Main Column */}
           <div className="lg:col-span-2">

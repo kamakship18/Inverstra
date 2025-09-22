@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Info, ArrowLeft } from 'lucide-react';
-import ThemeToggle from '@/components/ui/ThemeToggle';
+import Navbar from '@/components/layout/Navbar';
 
 export default function ConnectWallet() {
   const [isPending, setIsPending] = useState(false);
@@ -83,20 +83,7 @@ export default function ConnectWallet() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-purple-50 to-blue-50 dark:from-slate-950 dark:via-slate-900 dark:to-blue-950 flex items-center justify-center p-4 relative overflow-hidden">
-      {/* Theme toggle button */}
-      <div className="absolute top-6 right-6 z-30">
-        <ThemeToggle />
-      </div>
-
-      {/* Back button */}
-      <div className="absolute top-4 left-4 z-20">
-        <Link href="/">
-          <Button variant="ghost" className="flex items-center space-x-2 text-gray-700 dark:text-white hover:text-blue-500 dark:hover:text-blue-400">
-            <ArrowLeft className="w-5 h-5" />
-            <span>Back to Dashboard</span>
-          </Button>
-        </Link>
-      </div>
+      <Navbar />
 
       <Head>
         <title>Connect Wallet | Inverstra</title>

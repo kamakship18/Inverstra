@@ -4,13 +4,12 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { BookOpen, LightbulbIcon, ChevronRight, ArrowLeft, Home } from 'lucide-react';
-import ThemeToggle from '@/components/ui/ThemeToggle';
+import Navbar from '@/components/layout/Navbar';
 
 export default function RoleSelection() {
   const [selectedRole, setSelectedRole] = useState(null);
   const [walletAddress, setWalletAddress] = useState('');
 
-  // Get wallet address
   useEffect(() => {
     const connectedWallet = localStorage.getItem('connectedWalletAddress');
     if (connectedWallet) {
@@ -31,27 +30,7 @@ export default function RoleSelection() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-purple-50 to-blue-50 dark:from-slate-950 dark:via-slate-900 dark:to-blue-950 flex flex-col items-center justify-center p-4 relative overflow-hidden">
-      {/* Back to wallet connect */}
-      <div className="absolute top-6 left-6 z-20">
-        <Link href="/wallet-connect" className="text-gray-500 dark:text-slate-400 hover:text-blue-500 dark:hover:text-white flex items-center text-sm">
-          <ArrowLeft className="w-4 h-4 mr-1" />
-          Back to wallet connection
-        </Link>
-      </div>
-
-      {/* Theme toggle button */}
-      <div className="absolute top-6 right-6 z-30">
-        <ThemeToggle />
-      </div>
-
-      {/* Back home button */}
-      <div className="absolute top-4 left-4 z-20">
-        <Link href="/">
-          <Button variant="ghost" size="icon" className="text-gray-700 dark:text-white hover:text-blue-500 dark:hover:text-blue-400">
-            <Home className="w-8 h-8" />
-          </Button>
-        </Link>
-      </div>
+      <Navbar />
 
       <Head>
         <title>Choose Your Role | Inverstra</title>
@@ -64,8 +43,6 @@ export default function RoleSelection() {
         <div className="absolute bottom-1/4 right-1/4 w-96 h-96 rounded-full bg-purple-200/30 dark:bg-purple-500/10 blur-3xl"></div>
         <div className="absolute top-1/2 left-1/2 w-48 h-48 rounded-full bg-pink-200/30 dark:bg-cyan-500/5 blur-3xl"></div>
       </div>
-
-      <div className="absolute inset-0 bg-[url('/grid.svg')] bg-center opacity-5"></div>
 
       {/* Header */}
       <div className="text-center mb-10 relative z-10 mt-12">

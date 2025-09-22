@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { ChevronRight, LightbulbIcon, TrendingUp, Award, PieChart, Languages, AlertCircle, User } from 'lucide-react';
+import Navbar from '@/components/layout/Navbar';
 
 export default function InfluencerProfileSetup() {
   const router = useRouter();
@@ -144,14 +145,7 @@ export default function InfluencerProfileSetup() {
   
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-950 via-purple-950 to-slate-900 flex flex-col items-center justify-center p-4 relative overflow-hidden">
-      <div className="absolute top-4 left-4 z-20">
-      <div className="flex items-center justify-center mb-2">
-          <span className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-blue-500">
-            Inverstra
-          </span>
-        </div>
-
-      </div>
+      <Navbar />
       <Head>
         <title>Set Up Your Finfluencer Profile | Inverstra</title>
         <meta name="description" content="Create your Finfluencer profile on Inverstra" />

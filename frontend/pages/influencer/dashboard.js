@@ -21,6 +21,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
+import Navbar from '@/components/layout/Navbar';
 
 // mock data
 const trustData = {
@@ -192,24 +193,14 @@ export default function InfluencerDashboard() {
         <meta name="description" content="Manage your predictions and community engagement" />
       </Head>
       
-      {/* Header with wallet info */}
-      <header className="p-6 flex justify-between items-center border-b border-white/10">
-        <div className="flex items-center">
-          <span className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-500">
-            Inverstra
-          </span>
-        </div>
+      <Navbar />
+      
+      <div className="p-6 flex justify-between items-center border-b border-white/10 mt-20">
         <div className="flex items-center gap-6">
           <div className="text-sm text-slate-400">
             <span>Connected as: </span>
             <span className="font-mono text-white">{formatAddress(walletAddress)}</span>
           </div>
-
-          <Link href ="/">
-          <Button variant="outline" size="sm" className="border-white/40 hover:border-white/20">
-            Home
-          </Button>
-          </Link>
 
           <Link href="/influencer/create-position">
             <Button className="bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500">
@@ -217,7 +208,7 @@ export default function InfluencerDashboard() {
             </Button>
           </Link>
         </div>
-      </header>
+      </div>
       
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Notification */}
