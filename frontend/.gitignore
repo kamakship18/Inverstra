@@ -48,3 +48,7 @@ backend/bruno/
 
 .env
 .env.local
+
+setup-env.sh
+setup-env-clean.sh
+clean-git-history.sh

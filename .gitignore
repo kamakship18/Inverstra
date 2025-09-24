@@ -1,2 +1,4 @@
 node_modules
 .env
+clean-git-history.sh
+setup-env-clean.sh
