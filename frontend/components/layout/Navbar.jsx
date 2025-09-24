@@ -47,7 +47,7 @@ const Navbar = () => {
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center space-x-8">
-            {isHomePage && (
+            {isHomePage ? (
               <>
                 <nav className="flex space-x-6">
                   <Link href="#how-it-works" className="text-gray-700 dark:text-gray-200 hover:text-purple-600 dark:hover:text-purple-400 font-medium relative group">
@@ -70,6 +70,23 @@ const Navbar = () => {
                 >
                   Connect Wallet
                 </Button>
+              </>
+            ) : (
+              <>
+                <nav className="flex space-x-6">
+                  <Link href="/" className="text-gray-700 dark:text-gray-200 hover:text-purple-600 dark:hover:text-purple-400 font-medium relative group">
+                    Home
+                    <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-gradient-to-r from-purple-500 to-blue-600 group-hover:w-full transition-all duration-300"></span>
+                  </Link>
+                  <Link href="/dao/dashboard" className="text-gray-700 dark:text-gray-200 hover:text-purple-600 dark:hover:text-purple-400 font-medium relative group">
+                    DAO Community
+                    <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-gradient-to-r from-purple-500 to-blue-600 group-hover:w-full transition-all duration-300"></span>
+                  </Link>
+                  <Link href="/role-selection" className="text-gray-700 dark:text-gray-200 hover:text-purple-600 dark:hover:text-purple-400 font-medium relative group">
+                    Dashboard
+                    <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-gradient-to-r from-purple-500 to-blue-600 group-hover:w-full transition-all duration-300"></span>
+                  </Link>
+                </nav>
               </>
             )}
             
@@ -100,7 +117,7 @@ const Navbar = () => {
         {/* Mobile Menu */}
         {isMobileMenuOpen && (
           <div className="md:hidden bg-white/95 dark:bg-gray-900/95 backdrop-blur-lg py-4 px-2 rounded-lg mt-2 shadow-[0_4px_12px_rgba(0,0,0,0.15)] dark:shadow-[0_4px_12px_rgba(0,0,0,0.4)] border border-gray-200/50 dark:border-gray-800/50 animate-fadeIn">
-            {isHomePage && (
+            {isHomePage ? (
               <>
                 <nav className="flex flex-col space-y-3 mb-4">
                   <Link 
@@ -129,6 +146,29 @@ const Navbar = () => {
                 >
                   Connect Wallet
                 </Button>
+              </>
+            ) : (
+              <>
+                <nav className="flex flex-col space-y-3 mb-4">
+                  <Link 
+                    href="/" 
+                    className="text-gray-700 dark:text-gray-200 hover:text-purple-600 dark:hover:text-purple-400 font-medium px-3 py-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                  >
+                    Home
+                  </Link>
+                  <Link 
+                    href="/dao/dashboard" 
+                    className="text-gray-700 dark:text-gray-200 hover:text-purple-600 dark:hover:text-purple-400 font-medium px-3 py-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                  >
+                    DAO Community
+                  </Link>
+                  <Link 
+                    href="/role-selection" 
+                    className="text-gray-700 dark:text-gray-200 hover:text-purple-600 dark:hover:text-purple-400 font-medium px-3 py-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                  >
+                    Dashboard
+                  </Link>
+                </nav>
               </>
             )}
           </div>

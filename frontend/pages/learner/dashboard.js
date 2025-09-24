@@ -21,7 +21,7 @@ useEffect(() => {
       if (walletAddress) {
         setWalletAddress(walletAddress);
         
-        const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5000';
+        const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5003';
         const response = await axios.get(`${backendUrl}/api/learners/wallet/${walletAddress}`);
         
         if (response.data.success) {

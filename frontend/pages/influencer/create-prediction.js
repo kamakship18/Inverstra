@@ -6,6 +6,8 @@ import { toast, Toaster } from 'react-hot-toast';
 import { ethers } from "ethers";
 import { contractABI } from "../../contract/abi";
 import { contractAddress } from "../../contract/contractAddress";
+import { predictionDAOAbi } from "../../contract/daoAbi";
+import { DAO_CONTRACT_CONFIG } from "../../contract/daoContractAddress";
 import Navbar from '@/components/layout/Navbar';
 import { 
   Card, 
@@ -59,14 +61,51 @@ import {
 const CreatePredictionPage = () => {
   const [activeTab, setActiveTab] = useState('setup');
   const [userName, setUserName] = useState('');
+  const [isDAOMode, setIsDAOMode] = useState(false);
+  const [userAddress, setUserAddress] = useState('');
   const router = useRouter();
   const fileInputRef = useRef(null);
   
-  // Get user name from local storage
+  // Get user name from local storage and check wallet connection
   useEffect(() => {
     const storedName = localStorage.getItem('userName') || 'Anonymous';
     setUserName(storedName);
+    checkWalletConnection();
   }, []);
+
+  // Check wallet connection
+  const checkWalletConnection = async () => {
+    if (typeof window !== 'undefined' && window.ethereum) {
+      try {
+        const accounts = await window.ethereum.request({ method: 'eth_accounts' });
+        if (accounts.length > 0) {
+          setUserAddress(accounts[0]);
+        }
+      } catch (error) {
+        console.error('Error checking wallet connection:', error);
+      }
+    }
+  };
+
+  // Connect wallet
+  const connectWallet = async () => {
+    if (typeof window !== 'undefined' && window.ethereum) {
+      try {
+        const accounts = await window.ethereum.request({ 
+          method: 'eth_requestAccounts' 
+        });
+        if (accounts.length > 0) {
+          setUserAddress(accounts[0]);
+          toast.success('Wallet connected successfully!');
+        }
+      } catch (error) {
+        console.error('Error connecting wallet:', error);
+        toast.error('Failed to connect wallet');
+      }
+    } else {
+      toast.error('Please install MetaMask to connect your wallet');
+    }
+  };
   
   // Initialize form with useState and validation errors
   const [formData, setFormData] = useState({
@@ -78,6 +117,10 @@ const CreatePredictionPage = () => {
     confidence: 3,
     reasoning: '',
     confirmed: false,
+    // DAO-specific fields
+    votingPeriod: '3', // Default to 3 days
+    daoTitle: '',
+    daoDescription: '',
   });
   
   // Validation errors state
@@ -298,72 +341,169 @@ const CreatePredictionPage = () => {
       return;
     }
 
+    if (isDAOMode && !userAddress) {
+      toast.error("Please connect your wallet to submit DAO predictions");
+      return;
+    }
+
     try {
-      // First save to MongoDB
+      if (isDAOMode) {
+        // Submit to DAO contract
+        await submitToDAO();
+      } else {
+        // Submit to regular contract (existing logic)
+        await submitToRegularContract();
+      }
+      
+    } catch (err) {
+      console.error("Transaction failed:", err);
+      toast.error("Transaction failed: " + (err.message || "Unknown error"));
+    }
+  };
+
+  const submitToDAO = async () => {
+    try {
+      // Connect to wallet
+      const provider = new ethers.BrowserProvider(window.ethereum);
+      const signer = await provider.getSigner();
+      
+      // Get DAO contract
+      const networkConfig = DAO_CONTRACT_CONFIG.localhost;
+      const contract = new ethers.Contract(networkConfig.address, predictionDAOAbi, signer);
+      
+      // Create title and description for DAO
+      const title = formData.daoTitle || `${formData.asset} ${formData.predictionType === 'priceTarget' ? 'will reach ' + formData.targetPrice : 
+                    formData.predictionType === 'percentage' ? 'will change by ' + formData.targetPrice : 
+                    'will ' + formData.targetPrice} by ${formData.deadline}`;
+      
+      const description = formData.daoDescription || `Category: ${formData.category}\nAsset: ${formData.asset}\nPrediction: ${formData.predictionType}\nTarget: ${formData.targetPrice}\nDeadline: ${formData.deadline}\nConfidence: ${formData.confidence}/5\n\nReasoning:\n${formData.reasoning}`;
+      
+      // Convert voting period to seconds
+      const votingPeriodSeconds = parseInt(formData.votingPeriod) * 24 * 60 * 60;
+      
+      // Create prediction in DAO
+      const tx = await contract.createPrediction(
+        title,
+        description,
+        formData.category,
+        votingPeriodSeconds
+      );
+      
+      const receipt = await tx.wait();
+      
+      // Extract prediction ID from events
+      const predictionCreatedEvent = receipt.logs.find(
+        log => log.topics[0] === contract.interface.getEvent('PredictionCreated').topicHash
+      );
+      
+      let predictionId = null;
+      if (predictionCreatedEvent) {
+        predictionId = contract.interface.parseLog(predictionCreatedEvent).args.predictionId.toString();
+      }
+      
+      toast.success(`DAO Prediction created successfully! ID: ${predictionId}`);
+      
+      // Also save to MongoDB for backup
       const sources = uploadedFiles.map(file => ({
         name: file.name,
         type: file.type,
         validation: fileValidations[file.id] || { trustLevel: 'unverified', score: 0 }
       }));
 
-      const mongoResponse = await fetch('/api/predictions', {
+      await fetch('/api/predictions', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          predictionText: `${formData.asset} ${formData.predictionType === 'priceTarget' ? 'will reach ' + formData.targetPrice : 
-                          formData.predictionType === 'percentage' ? 'will change by ' + formData.targetPrice : 
-                          'will ' + formData.targetPrice} by ${formData.deadline}`,
-          reasoning: formData.reasoning,
+          predictionText: title,
+          reasoning: description,
           validationScore: validationPercentage,
           sources: sources,
           perplexityCheck: reasoningValidation,
           createdBy: userName,
-          createdAt: new Date().toISOString()
+          createdAt: new Date().toISOString(),
+          daoPredictionId: predictionId,
+          isDAOPrediction: true
         }),
       });
-
-      const mongoData = await mongoResponse.json();
       
-      if (!mongoResponse.ok) {
-        throw new Error(mongoData.error || 'Error saving to database');
-      }
-
-      // Then submit to blockchain
-      if (!window.ethereum) {
-        toast.error("MetaMask is required for blockchain submission");
-        return;
-      }
-
-      const provider = new ethers.BrowserProvider(window.ethereum);
-      const signer = await provider.getSigner();
-      const contract = new ethers.Contract(contractAddress, contractABI, signer);
-
-      const tx = await contract.submitForm(
-        "general", // Default community since we removed community selection
-        formData.category,
-        formData.asset,
-        formData.predictionType,
-        formData.targetPrice,
-        formData.deadline,
-        parseInt(formData.confidence),
-        formData.reasoning,
-        formData.confirmed
-      );
-      
-      await tx.wait();
-      toast.success("Prediction submitted successfully!");
-      
-      // Redirect to community hub
+      // Redirect to DAO dashboard
       setTimeout(() => {
-        router.push('/influencer/community-hub');
+        router.push('/dao/dashboard');
       }, 2000);
       
-    } catch (err) {
-      console.error("Transaction failed:", err);
-      toast.error("Transaction failed: " + (err.message || "Unknown error"));
+    } catch (error) {
+      console.error('Error submitting to DAO:', error);
+      if (error.message.includes('Not a DAO member')) {
+        toast.error('You are not a member of the DAO. Please contact the admin to join.');
+      } else {
+        throw error;
+      }
     }
+  };
+
+  const submitToRegularContract = async () => {
+    // First save to MongoDB
+    const sources = uploadedFiles.map(file => ({
+      name: file.name,
+      type: file.type,
+      validation: fileValidations[file.id] || { trustLevel: 'unverified', score: 0 }
+    }));
+
+    const mongoResponse = await fetch('/api/predictions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        predictionText: `${formData.asset} ${formData.predictionType === 'priceTarget' ? 'will reach ' + formData.targetPrice : 
+                        formData.predictionType === 'percentage' ? 'will change by ' + formData.targetPrice : 
+                        'will ' + formData.targetPrice} by ${formData.deadline}`,
+        reasoning: formData.reasoning,
+        validationScore: validationPercentage,
+        sources: sources,
+        perplexityCheck: reasoningValidation,
+        createdBy: userName,
+        createdAt: new Date().toISOString()
+      }),
+    });
+
+    const mongoData = await mongoResponse.json();
+    
+    if (!mongoResponse.ok) {
+      throw new Error(mongoData.error || 'Error saving to database');
+    }
+
+    // Then submit to blockchain
+    if (!window.ethereum) {
+      toast.error("MetaMask is required for blockchain submission");
+      return;
+    }
+
+    const provider = new ethers.BrowserProvider(window.ethereum);
+    const signer = await provider.getSigner();
+    const contract = new ethers.Contract(contractAddress, contractABI, signer);
+
+    const tx = await contract.submitForm(
+      "general", // Default community since we removed community selection
+      formData.category,
+      formData.asset,
+      formData.predictionType,
+      formData.targetPrice,
+      formData.deadline,
+      parseInt(formData.confidence),
+      formData.reasoning,
+      formData.confirmed
+    );
+    
+    await tx.wait();
+    toast.success("Prediction submitted successfully!");
+    
+    // Redirect to community hub
+    setTimeout(() => {
+      router.push('/influencer/community-hub');
+    }, 2000);
   };
   
   const getConfidenceColor = (level) => {
@@ -557,8 +697,67 @@ const CreatePredictionPage = () => {
                 <CardHeader>
                   <CardTitle className="text-2xl text-white">Create New Prediction</CardTitle>
                   <CardDescription className="text-gray-400">
-                    Create a prediction to share with your DAO community
+                    Create a prediction to share with your community
                   </CardDescription>
+                  
+                  {/* DAO Mode Toggle */}
+                  <div className="mt-4 p-4 bg-gray-800/50 rounded-lg border border-gray-700">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <Shield className="w-5 h-5 text-blue-400" />
+                        <div>
+                          <h3 className="text-white font-medium">DAO Community Mode</h3>
+                          <p className="text-gray-400 text-sm">
+                            Submit predictions for community voting (70% approval required)
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        {isDAOMode && !userAddress && (
+                          <Button
+                            onClick={connectWallet}
+                            variant="outline"
+                            size="sm"
+                            className="border-blue-500 text-blue-400 hover:bg-blue-500 hover:text-white"
+                          >
+                            Connect Wallet
+                          </Button>
+                        )}
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm text-gray-400">Regular</span>
+                          <button
+                            type="button"
+                            onClick={() => setIsDAOMode(!isDAOMode)}
+                            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                              isDAOMode ? 'bg-blue-600' : 'bg-gray-600'
+                            }`}
+                          >
+                            <span
+                              className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                                isDAOMode ? 'translate-x-6' : 'translate-x-1'
+                              }`}
+                            />
+                          </button>
+                          <span className="text-sm text-gray-400">DAO</span>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    {isDAOMode && (
+                      <div className="mt-3 p-3 bg-blue-900/20 border border-blue-500/30 rounded-lg">
+                        <div className="flex items-start gap-2">
+                          <AlertCircle className="w-4 h-4 text-blue-400 mt-0.5" />
+                          <div className="text-sm text-blue-300">
+                            <p className="font-medium">DAO Mode Active</p>
+                            <p>Your prediction will be submitted to the DAO for community voting. Predictions need 70% approval to be featured.</p>
+                            {!userAddress && (
+                              <p className="text-yellow-400 mt-1">⚠️ Please connect your wallet to submit DAO predictions.</p>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 </CardHeader>
                 
                 <CardContent>
@@ -778,6 +977,66 @@ const CreatePredictionPage = () => {
                         <p className="text-gray-500 text-sm mt-1">
                           Provide detailed analysis to support your prediction
                         </p>
+                        
+                        {/* DAO-specific fields */}
+                        {isDAOMode && (
+                          <div className="mt-6 space-y-4 p-4 bg-blue-900/10 border border-blue-500/30 rounded-lg">
+                            <h4 className="text-blue-400 font-medium flex items-center gap-2">
+                              <Shield className="w-4 h-4" />
+                              DAO Prediction Settings
+                            </h4>
+                            
+                            <div>
+                              <label className="block text-white mb-2">Custom Title (Optional)</label>
+                              <Input
+                                placeholder="Leave empty to auto-generate from prediction details"
+                                className="bg-gray-800 border-gray-700 text-white"
+                                value={formData.daoTitle}
+                                onChange={(e) => handleChange('daoTitle', e.target.value)}
+                                maxLength={100}
+                              />
+                              <p className="text-gray-500 text-sm mt-1">
+                                {formData.daoTitle.length}/100 characters
+                              </p>
+                            </div>
+                            
+                            <div>
+                              <label className="block text-white mb-2">Custom Description (Optional)</label>
+                              <Textarea
+                                placeholder="Leave empty to auto-generate from prediction details"
+                                className="bg-gray-800 border-gray-700 text-white min-h-20"
+                                value={formData.daoDescription}
+                                onChange={(e) => handleChange('daoDescription', e.target.value)}
+                                maxLength={500}
+                              />
+                              <p className="text-gray-500 text-sm mt-1">
+                                {formData.daoDescription.length}/500 characters
+                              </p>
+                            </div>
+                            
+                            <div>
+                              <label className="block text-white mb-2">Voting Period*</label>
+                              <Select 
+                                onValueChange={(value) => handleChange('votingPeriod', value)}
+                                value={formData.votingPeriod}
+                              >
+                                <SelectTrigger className="bg-gray-800 border-gray-700 text-white">
+                                  <SelectValue placeholder="Select voting period" />
+                                </SelectTrigger>
+                                <SelectContent className="bg-gray-800 border-gray-700 text-white">
+                                  <SelectItem value="1">1 Day</SelectItem>
+                                  <SelectItem value="2">2 Days</SelectItem>
+                                  <SelectItem value="3">3 Days</SelectItem>
+                                  <SelectItem value="5">5 Days</SelectItem>
+                                  <SelectItem value="7">7 Days</SelectItem>
+                                </SelectContent>
+                              </Select>
+                              <p className="text-gray-500 text-sm mt-1">
+                                How long the community has to vote on your prediction
+                              </p>
+                            </div>
+                          </div>
+                        )}
                         
                         {/* Reasoning Validation Results */}
                         {reasoningValidation && (

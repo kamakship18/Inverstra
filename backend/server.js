@@ -14,13 +14,17 @@ app.use(cors({
     'http://localhost:3000', 
     'https://hack-india25-maverick1.vercel.app'
   ],
-  credentials: true
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+  optionsSuccessStatus: 200
 }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 app.use('/api/test', require('./routes/testRoutes'));
 app.use('/api/learners', require('./routes/learnerRoutes'));
+app.use('/api/dao', require('./routes/daoRoutes'));
 
 app.get('/', (req, res) => {
   res.json({
@@ -56,7 +60,7 @@ app.use((error, req, res, next) => {
   });
 });
 
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 5004;
 
 app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);

@@ -25,12 +25,23 @@ export default function LearnerProfileSetup() {
     areasOfInterest: [],
     primaryGoal: '',
     riskTolerance: '',
-    language: 'english'
+    language: 'english',
+    // New fields for enhanced AI curation
+    investmentAmount: 0,
+    timeHorizon: 'medium-term',
+    learningGoals: [],
+    preferredPredictionTypes: ['market-trends', 'crypto', 'stocks', 'news-analysis'],
+    aiPreferences: {
+      newsFrequency: 'daily',
+      marketAlerts: true,
+      personalizedInsights: true,
+      riskWarnings: true
+    }
   });
   
   const [currentStep, setCurrentStep] = useState(1);
   const [errors, setErrors] = useState({});
-  const totalSteps = 2;
+  const totalSteps = 4; // Increased to include new steps
   
   // Load data from localStorage on initial render
   useEffect(() => {
@@ -119,6 +130,51 @@ export default function LearnerProfileSetup() {
   const handleLanguageChange = (value) => {
     setFormData(prev => ({ ...prev, language: value }));
   };
+
+  // New handlers for enhanced fields
+  const handleInvestmentAmountChange = (value) => {
+    setFormData(prev => ({ ...prev, investmentAmount: parseInt(value) || 0 }));
+    setErrors(prev => ({...prev, investmentAmount: ''}));
+  };
+
+  const handleTimeHorizonChange = (value) => {
+    setFormData(prev => ({ ...prev, timeHorizon: value }));
+    setErrors(prev => ({...prev, timeHorizon: ''}));
+  };
+
+  const handleLearningGoalToggle = (goal) => {
+    setFormData(prev => {
+      const isRemoving = prev.learningGoals.includes(goal);
+      const updatedGoals = isRemoving
+        ? prev.learningGoals.filter(item => item !== goal)
+        : [...prev.learningGoals, goal];
+      
+      setErrors(prev => ({...prev, learningGoals: ''}));
+      return { ...prev, learningGoals: updatedGoals };
+    });
+  };
+
+  const handlePredictionTypeToggle = (type) => {
+    setFormData(prev => {
+      const isRemoving = prev.preferredPredictionTypes.includes(type);
+      const updatedTypes = isRemoving
+        ? prev.preferredPredictionTypes.filter(item => item !== type)
+        : [...prev.preferredPredictionTypes, type];
+      
+      setErrors(prev => ({...prev, preferredPredictionTypes: ''}));
+      return { ...prev, preferredPredictionTypes: updatedTypes };
+    });
+  };
+
+  const handleAIPreferenceChange = (preference, value) => {
+    setFormData(prev => ({
+      ...prev,
+      aiPreferences: {
+        ...prev.aiPreferences,
+        [preference]: value
+      }
+    }));
+  };
   
   const validateStep = (step) => {
     const newErrors = {};
@@ -135,15 +191,33 @@ export default function LearnerProfileSetup() {
       if (formData.areasOfInterest.length === 0) {
         newErrors.areasOfInterest = 'Please select at least one area of interest';
       }
-      
-      if (!formData.primaryGoal) {
-        newErrors.primaryGoal = 'Please select a primary goal';
-      }
     }
     
     if (step === 2) {
+      if (!formData.primaryGoal) {
+        newErrors.primaryGoal = 'Please select a primary goal';
+      }
+      
       if (!formData.riskTolerance) {
         newErrors.riskTolerance = 'Please select your risk tolerance';
+      }
+    }
+
+    if (step === 3) {
+      if (formData.investmentAmount < 0) {
+        newErrors.investmentAmount = 'Investment amount cannot be negative';
+      }
+      if (!formData.timeHorizon) {
+        newErrors.timeHorizon = 'Please select your time horizon';
+      }
+      if (formData.learningGoals.length === 0) {
+        newErrors.learningGoals = 'Please select at least one learning goal';
+      }
+    }
+
+    if (step === 4) {
+      if (formData.preferredPredictionTypes.length === 0) {
+        newErrors.preferredPredictionTypes = 'Please select at least one prediction type';
       }
     }
     
@@ -173,7 +247,7 @@ export default function LearnerProfileSetup() {
           showToast('Saving your profile...', 'loading');
           
           // Check if profile already exists
-          const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5000';
+          const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5003';
           
           // First check if the profile exists
           const checkResponse = await axios.get(`${backendUrl}/api/learners/wallet/${walletAddress}`);
@@ -202,7 +276,7 @@ export default function LearnerProfileSetup() {
           if (error.response && error.response.status === 404) {
             try {
               const walletAddress = localStorage.getItem('connectedWalletAddress');
-              const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5000';
+              const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5003';
               
               await axios.post(`${backendUrl}/api/learners`, {
                 ...formData,
@@ -556,6 +630,287 @@ export default function LearnerProfileSetup() {
                         {errors.riskTolerance}
                       </div>
                     )}
+                  </div>
+                </>
+              )}
+
+              {currentStep === 3 && (
+                <>
+                  {/* Investment Amount */}
+                  <div className="mb-8">
+                    <div className="flex items-center mb-4">
+                      <WalletCards className="w-5 h-5 mr-2 text-blue-400" />
+                      <h2 className="text-xl font-medium bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-blue-400 dark:to-indigo-400">Investment Amount</h2>
+                    </div>
+                    <p className="text-sm text-gray-600 dark:text-gray-300 mb-4">How much are you planning to invest?</p>
+                    
+                    <div className="relative">
+                      <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 dark:text-gray-400">$</span>
+                      <Input
+                        type="number"
+                        placeholder="Enter amount"
+                        value={formData.investmentAmount}
+                        onChange={(e) => handleInvestmentAmountChange(e.target.value)}
+                        className={`pl-8 ${errors.investmentAmount ? 'border-red-500' : ''}`}
+                      />
+                    </div>
+                    
+                    {errors.investmentAmount && (
+                      <div className="text-red-500 text-xs mt-1 flex items-center">
+                        <AlertCircle className="w-3 h-3 mr-1" />
+                        {errors.investmentAmount}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Time Horizon */}
+                  <div className="mb-8">
+                    <div className="flex items-center mb-4">
+                      <BarChart3 className="w-5 h-5 mr-2 text-blue-400" />
+                      <h2 className="text-xl font-medium bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-blue-400 dark:to-indigo-400">Investment Time Horizon</h2>
+                    </div>
+                    <p className="text-sm text-gray-600 dark:text-gray-300 mb-4">How long do you plan to invest?</p>
+                    
+                    <RadioGroup 
+                      className="grid grid-cols-3 gap-4"
+                      value={formData.timeHorizon}
+                      onValueChange={handleTimeHorizonChange}
+                    >
+                      <div className="flex flex-col items-center">
+                        <motion.div 
+                          initial={{ opacity: 0, y: 20 }} 
+                          animate={{ opacity: 1, y: 0 }} 
+                          transition={{ duration: 0.5, delay: 0.1 }} 
+                          whileHover={{ scale: 1.05 }}
+                          className={`p-4 rounded-xl border transition-all duration-300 cursor-pointer shadow-sm hover:ring-2 hover:ring-green-400 ${
+                            formData.timeHorizon === 'short-term' 
+                              ? 'bg-gradient-to-br from-green-100 to-green-50 border-green-400/50 shadow-lg ring-2 ring-green-400' 
+                              : 'bg-white/60 dark:bg-slate-800/50 border-gray-300 dark:border-slate-700'
+                          }`}
+                        > 
+                          <RadioGroupItem value="short-term" id="short-term" className="sr-only" />
+                          <span className="text-xl mb-1">⚡</span>
+                          <Label htmlFor="short-term" className="font-medium text-gray-800 dark:text-white">Short-term</Label>
+                          <p className="text-xs text-gray-600 dark:text-gray-300 mt-1">Less than 1 year</p>
+                        </motion.div>
+                      </div>
+                      
+                      <div className="flex flex-col items-center">
+                        <motion.div 
+                          initial={{ opacity: 0, y: 20 }} 
+                          animate={{ opacity: 1, y: 0 }} 
+                          transition={{ duration: 0.5, delay: 0.2 }} 
+                          whileHover={{ scale: 1.05 }}
+                          className={`p-4 rounded-xl border transition-all duration-300 cursor-pointer shadow-sm hover:ring-2 hover:ring-blue-400 ${
+                            formData.timeHorizon === 'medium-term' 
+                              ? 'bg-gradient-to-br from-blue-100 to-blue-50 border-blue-400/50 shadow-lg ring-2 ring-blue-400' 
+                              : 'bg-white/60 dark:bg-slate-800/50 border-gray-300 dark:border-slate-700'
+                          }`}
+                        > 
+                          <RadioGroupItem value="medium-term" id="medium-term" className="sr-only" />
+                          <span className="text-xl mb-1">📅</span>
+                          <Label htmlFor="medium-term" className="font-medium text-gray-800 dark:text-white">Medium-term</Label>
+                          <p className="text-xs text-gray-600 dark:text-gray-300 mt-1">1-5 years</p>
+                        </motion.div>
+                      </div>
+                      
+                      <div className="flex flex-col items-center">
+                        <motion.div 
+                          initial={{ opacity: 0, y: 20 }} 
+                          animate={{ opacity: 1, y: 0 }} 
+                          transition={{ duration: 0.5, delay: 0.3 }} 
+                          whileHover={{ scale: 1.05 }}
+                          className={`p-4 rounded-xl border transition-all duration-300 cursor-pointer shadow-sm hover:ring-2 hover:ring-purple-400 ${
+                            formData.timeHorizon === 'long-term' 
+                              ? 'bg-gradient-to-br from-purple-100 to-purple-50 border-purple-400/50 shadow-lg ring-2 ring-purple-400' 
+                              : 'bg-white/60 dark:bg-slate-800/50 border-gray-300 dark:border-slate-700'
+                          }`}
+                        > 
+                          <RadioGroupItem value="long-term" id="long-term" className="sr-only" />
+                          <span className="text-xl mb-1">🏆</span>
+                          <Label htmlFor="long-term" className="font-medium text-gray-800 dark:text-white">Long-term</Label>
+                          <p className="text-xs text-gray-600 dark:text-gray-300 mt-1">5+ years</p>
+                        </motion.div>
+                      </div>
+                    </RadioGroup>
+                    
+                    {errors.timeHorizon && (
+                      <div className="text-red-500 text-xs mt-1 flex items-center">
+                        <AlertCircle className="w-3 h-3 mr-1" />
+                        {errors.timeHorizon}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Learning Goals */}
+                  <div className="mb-8">
+                    <div className="flex items-center mb-4">
+                      <BookOpen className="w-5 h-5 mr-2 text-blue-400" />
+                      <h2 className="text-xl font-medium bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-blue-400 dark:to-indigo-400">Learning Goals</h2>
+                    </div>
+                    <p className="text-sm text-gray-600 dark:text-gray-300 mb-4">What do you want to learn about investing?</p>
+                    
+                    <div className={`grid grid-cols-2 gap-3 ${errors.learningGoals ? 'border border-red-500 p-2 rounded-md' : ''}`}>
+                      {[
+                        { id: 'market-analysis', label: 'Market Analysis', icon: '📊' },
+                        { id: 'risk-management', label: 'Risk Management', icon: '🛡️' },
+                        { id: 'portfolio-diversification', label: 'Portfolio Diversification', icon: '🎯' },
+                        { id: 'technical-analysis', label: 'Technical Analysis', icon: '📈' },
+                        { id: 'fundamental-analysis', label: 'Fundamental Analysis', icon: '📋' },
+                        { id: 'trading-strategies', label: 'Trading Strategies', icon: '⚡' }
+                      ].map((goal) => (
+                        <motion.div
+                          key={goal.id}
+                          initial={{ opacity: 0, y: 20 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ duration: 0.5, delay: 0.1 }}
+                          whileHover={{ scale: 1.02 }}
+                          whileTap={{ scale: 0.98 }}
+                        >
+                          <div
+                            onClick={() => handleLearningGoalToggle(goal.id)}
+                            className={`p-3 rounded-lg border cursor-pointer transition-all duration-200 ${
+                              formData.learningGoals.includes(goal.id)
+                                ? 'bg-gradient-to-r from-blue-100 to-indigo-100 dark:from-blue-900/40 dark:to-indigo-900/40 border-blue-400 dark:border-blue-500 shadow-md'
+                                : 'bg-white/60 dark:bg-slate-800/50 border-gray-300 dark:border-slate-700 hover:bg-gradient-to-r hover:from-blue-50/50 hover:to-indigo-50/50 dark:hover:from-blue-900/20 dark:hover:to-indigo-900/20'
+                            }`}
+                          >
+                            <div className="flex items-center space-x-2">
+                              <span className="text-lg">{goal.icon}</span>
+                              <span className="text-sm font-medium text-gray-800 dark:text-white">{goal.label}</span>
+                            </div>
+                          </div>
+                        </motion.div>
+                      ))}
+                    </div>
+                    
+                    {errors.learningGoals && (
+                      <div className="text-red-500 text-xs mt-1 flex items-center">
+                        <AlertCircle className="w-3 h-3 mr-1" />
+                        {errors.learningGoals}
+                      </div>
+                    )}
+                  </div>
+                </>
+              )}
+
+              {currentStep === 4 && (
+                <>
+                  {/* Preferred Prediction Types */}
+                  <div className="mb-8">
+                    <div className="flex items-center mb-4">
+                      <Target className="w-5 h-5 mr-2 text-blue-400" />
+                      <h2 className="text-xl font-medium bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-blue-400 dark:to-indigo-400">Preferred Prediction Types</h2>
+                    </div>
+                    <p className="text-sm text-gray-600 dark:text-gray-300 mb-4">What types of predictions are you most interested in?</p>
+                    
+                    <div className={`grid grid-cols-2 gap-3 ${errors.preferredPredictionTypes ? 'border border-red-500 p-2 rounded-md' : ''}`}>
+                      {[
+                        { id: 'market-trends', label: 'Market Trends', icon: '📈' },
+                        { id: 'crypto', label: 'Cryptocurrency', icon: '₿' },
+                        { id: 'stocks', label: 'Stock Analysis', icon: '📊' },
+                        { id: 'news-analysis', label: 'News Analysis', icon: '📰' },
+                        { id: 'economic-indicators', label: 'Economic Indicators', icon: '🏛️' },
+                        { id: 'sector-analysis', label: 'Sector Analysis', icon: '🏭' }
+                      ].map((type) => (
+                        <motion.div
+                          key={type.id}
+                          initial={{ opacity: 0, y: 20 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ duration: 0.5, delay: 0.1 }}
+                          whileHover={{ scale: 1.02 }}
+                          whileTap={{ scale: 0.98 }}
+                        >
+                          <div
+                            onClick={() => handlePredictionTypeToggle(type.id)}
+                            className={`p-3 rounded-lg border cursor-pointer transition-all duration-200 ${
+                              formData.preferredPredictionTypes.includes(type.id)
+                                ? 'bg-gradient-to-r from-purple-100 to-pink-100 dark:from-purple-900/40 dark:to-pink-900/40 border-purple-400 dark:border-purple-500 shadow-md'
+                                : 'bg-white/60 dark:bg-slate-800/50 border-gray-300 dark:border-slate-700 hover:bg-gradient-to-r hover:from-purple-50/50 hover:to-pink-50/50 dark:hover:from-purple-900/20 dark:hover:to-pink-900/20'
+                            }`}
+                          >
+                            <div className="flex items-center space-x-2">
+                              <span className="text-lg">{type.icon}</span>
+                              <span className="text-sm font-medium text-gray-800 dark:text-white">{type.label}</span>
+                            </div>
+                          </div>
+                        </motion.div>
+                      ))}
+                    </div>
+                    
+                    {errors.preferredPredictionTypes && (
+                      <div className="text-red-500 text-xs mt-1 flex items-center">
+                        <AlertCircle className="w-3 h-3 mr-1" />
+                        {errors.preferredPredictionTypes}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* AI Preferences */}
+                  <div className="mb-8">
+                    <div className="flex items-center mb-4">
+                      <Globe className="w-5 h-5 mr-2 text-blue-400" />
+                      <h2 className="text-xl font-medium bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-blue-400 dark:to-indigo-400">AI Preferences</h2>
+                    </div>
+                    <p className="text-sm text-gray-600 dark:text-gray-300 mb-4">Customize your AI-powered experience</p>
+                    
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between p-3 rounded-lg bg-white/60 dark:bg-slate-800/50 border border-gray-300 dark:border-slate-700">
+                        <div>
+                          <h3 className="font-medium text-gray-800 dark:text-white">News Frequency</h3>
+                          <p className="text-xs text-gray-600 dark:text-gray-300">How often do you want market news updates?</p>
+                        </div>
+                        <Select value={formData.aiPreferences.newsFrequency} onValueChange={(value) => handleAIPreferenceChange('newsFrequency', value)}>
+                          <SelectTrigger className="w-32">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="daily">Daily</SelectItem>
+                            <SelectItem value="weekly">Weekly</SelectItem>
+                            <SelectItem value="monthly">Monthly</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div className="flex items-center justify-between p-3 rounded-lg bg-white/60 dark:bg-slate-800/50 border border-gray-300 dark:border-slate-700">
+                        <div>
+                          <h3 className="font-medium text-gray-800 dark:text-white">Market Alerts</h3>
+                          <p className="text-xs text-gray-600 dark:text-gray-300">Receive alerts for significant market movements</p>
+                        </div>
+                        <input
+                          type="checkbox"
+                          checked={formData.aiPreferences.marketAlerts}
+                          onChange={(e) => handleAIPreferenceChange('marketAlerts', e.target.checked)}
+                          className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"
+                        />
+                      </div>
+
+                      <div className="flex items-center justify-between p-3 rounded-lg bg-white/60 dark:bg-slate-800/50 border border-gray-300 dark:border-slate-700">
+                        <div>
+                          <h3 className="font-medium text-gray-800 dark:text-white">Personalized Insights</h3>
+                          <p className="text-xs text-gray-600 dark:text-gray-300">Get AI-generated insights based on your profile</p>
+                        </div>
+                        <input
+                          type="checkbox"
+                          checked={formData.aiPreferences.personalizedInsights}
+                          onChange={(e) => handleAIPreferenceChange('personalizedInsights', e.target.checked)}
+                          className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"
+                        />
+                      </div>
+
+                      <div className="flex items-center justify-between p-3 rounded-lg bg-white/60 dark:bg-slate-800/50 border border-gray-300 dark:border-slate-700">
+                        <div>
+                          <h3 className="font-medium text-gray-800 dark:text-white">Risk Warnings</h3>
+                          <p className="text-xs text-gray-600 dark:text-gray-300">Get warnings about high-risk investments</p>
+                        </div>
+                        <input
+                          type="checkbox"
+                          checked={formData.aiPreferences.riskWarnings}
+                          onChange={(e) => handleAIPreferenceChange('riskWarnings', e.target.checked)}
+                          className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"
+                        />
+                      </div>
+                    </div>
                   </div>
                 </>
               )}

@@ -24,7 +24,7 @@ const learnerProfileSchema = new mongoose.Schema({
   primaryGoal: {
     type: String,
     required: true,
-    enum: ['growth', 'income', 'retirement']
+    enum: ['growth', 'income', 'retirement', 'learning', 'trading']
   },
   riskTolerance: {
     type: String,
@@ -38,7 +38,70 @@ const learnerProfileSchema = new mongoose.Schema({
   walletAddress: {
     type: String,
     required: true,
-    trim: true
+    trim: true,
+    unique: true
+  },
+  // New fields for enhanced AI curation
+  investmentAmount: {
+    type: Number,
+    default: 0,
+    min: 0
+  },
+  timeHorizon: {
+    type: String,
+    enum: ['short-term', 'medium-term', 'long-term'],
+    default: 'medium-term'
+  },
+  learningGoals: {
+    type: [String],
+    default: []
+  },
+  preferredPredictionTypes: {
+    type: [String],
+    default: ['market-trends', 'crypto', 'stocks', 'news-analysis']
+  },
+  aiPreferences: {
+    type: {
+      newsFrequency: {
+        type: String,
+        enum: ['daily', 'weekly', 'monthly'],
+        default: 'daily'
+      },
+      marketAlerts: {
+        type: Boolean,
+        default: true
+      },
+      personalizedInsights: {
+        type: Boolean,
+        default: true
+      },
+      riskWarnings: {
+        type: Boolean,
+        default: true
+      }
+    },
+    default: {}
+  },
+  // AI-generated curated content
+  curatedContent: {
+    type: {
+      lastUpdated: Date,
+      marketTrends: [String],
+      personalizedNews: [String],
+      riskAlerts: [String],
+      learningRecommendations: [String]
+    },
+    default: {}
+  },
+  // User activity tracking for better AI recommendations
+  activityStats: {
+    type: {
+      predictionsViewed: { type: Number, default: 0 },
+      predictionsVoted: { type: Number, default: 0 },
+      learningModulesCompleted: { type: Number, default: 0 },
+      lastActiveDate: Date
+    },
+    default: {}
   },
   createdAt: {
     type: Date,
