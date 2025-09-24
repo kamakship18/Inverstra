@@ -247,7 +247,7 @@ export default function LearnerProfileSetup() {
           showToast('Saving your profile...', 'loading');
           
           // Check if profile already exists
-          const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5003';
+          const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5004';
           
           // First check if the profile exists
           const checkResponse = await axios.get(`${backendUrl}/api/learners/wallet/${walletAddress}`);
@@ -276,7 +276,7 @@ export default function LearnerProfileSetup() {
           if (error.response && error.response.status === 404) {
             try {
               const walletAddress = localStorage.getItem('connectedWalletAddress');
-              const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5003';
+              const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5004';
               
               await axios.post(`${backendUrl}/api/learners`, {
                 ...formData,
