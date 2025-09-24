@@ -6,7 +6,6 @@ import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
 import Navbar from '@/components/layout/Navbar';
-
 import { 
   Wallet, 
   TrendingUp, 
@@ -357,7 +356,7 @@ export default function Home() {
         </section>
 
 {/* Who It's For Section */}
-<section className="py-20 bg-gradient-to-b from-white via-purple-50 to-blue-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
+<section id="who-its-for" className="py-20 bg-gradient-to-b from-white via-purple-50 to-blue-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
   <div className="max-w-6xl mx-auto px-6">
     <h2 className="text-4xl font-bold text-center mb-16">
       Who It’s <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400">For</span>

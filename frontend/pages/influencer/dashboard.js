@@ -202,7 +202,7 @@ export default function InfluencerDashboard() {
             <span className="font-mono text-white">{formatAddress(walletAddress)}</span>
           </div>
 
-          <Link href="/influencer/create-position">
+          <Link href="/influencer/create-prediction">
             <Button className="bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500">
               <Plus className="mr-2 h-4 w-4" /> Create New Prediction
             </Button>
@@ -376,7 +376,7 @@ export default function InfluencerDashboard() {
                   </div>
                   
                   <div className="flex flex-wrap justify-center gap-3">
-                  <Link href="/influencer/create-position">
+                  <Link href="/influencer/create-prediction">
                     <Button className="bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500">
                       <Plus className="mr-2 h-4 w-4" /> Create New Prediction
                     </Button>
