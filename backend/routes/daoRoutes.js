@@ -2,6 +2,8 @@ const express = require('express');
 const { ethers } = require('ethers');
 const router = express.Router();
 const DAOPrediction = require('../models/DAOPrediction');
+const InfluencerProfile = require('../models/InfluencerProfile');
+const PredictionData = require('../models/PredictionData');
 
 // Import contract ABI and address
 const { predictionDAOAbi } = require('../contract/daoAbi.js');
@@ -120,13 +122,22 @@ class DAOContractService {
       }
     }
     
-    // Fallback to MongoDB
+    // Fallback to MongoDB - implement 70% threshold logic
     try {
       const predictions = await DAOPrediction.find({
-        isApproved: true
+        isActive: false // Voting period ended
       }).sort({ createdAt: -1 });
       
-      return predictions.map(pred => ({
+      // Filter predictions that have 70%+ yes votes
+      const approvedPredictions = predictions.filter(pred => {
+        const totalVotes = pred.yesVotes + pred.noVotes;
+        if (totalVotes === 0) return false; // No votes yet
+        
+        const yesPercentage = (pred.yesVotes / totalVotes) * 100;
+        return yesPercentage >= 70; // 70% threshold
+      });
+      
+      return approvedPredictions.map(pred => ({
         id: pred.id.toString(),
         creator: pred.creator,
         title: pred.title,
@@ -134,7 +145,7 @@ class DAOContractService {
         category: pred.category,
         endTime: Math.floor(pred.endTime.getTime() / 1000).toString(),
         isActive: pred.isActive,
-        isApproved: pred.isApproved,
+        isApproved: true, // These are approved by 70%+ votes
         totalVotes: pred.totalVotes.toString(),
         yesVotes: pred.yesVotes.toString(),
         noVotes: pred.noVotes.toString(),
@@ -318,7 +329,7 @@ const daoService = new DAOContractService();
 // Create a new prediction (MongoDB primary, contract as backup)
 router.post('/predictions/create', async (req, res) => {
   try {
-    const { title, description, category, votingPeriod, creator } = req.body;
+    const { title, description, category, votingPeriod, creator, originalPredictionData } = req.body;
     
     if (!title || !description || !category || !votingPeriod || !creator) {
       return res.status(400).json({
@@ -367,6 +378,75 @@ router.post('/predictions/create', async (req, res) => {
     predictionData.contractPredictionId = contractPredictionId;
     const prediction = await daoService.createPredictionInDB(predictionData);
     
+    // Also save comprehensive prediction data if provided
+    if (originalPredictionData) {
+      try {
+        const comprehensiveData = new PredictionData({
+          predictionText: title,
+          reasoning: description,
+          validationScore: originalPredictionData.validationScore || 0,
+          sources: originalPredictionData.sources || [],
+          perplexityCheck: originalPredictionData.perplexityCheck || null,
+          createdBy: creator,
+          formData: originalPredictionData.formData || {},
+          aiValidation: originalPredictionData.aiValidation || {},
+          daoData: {
+            daoPredictionId: prediction.id.toString(),
+            votingPeriod: parseInt(votingPeriod),
+            totalVotes: 0,
+            yesVotes: 0,
+            noVotes: 0,
+            isApproved: false
+          },
+          status: 'submitted-to-dao'
+        });
+        
+        await comprehensiveData.save();
+        console.log('Saved comprehensive prediction data for DAO prediction:', prediction.id);
+      } catch (comprehensiveError) {
+        console.error('Error saving comprehensive prediction data:', comprehensiveError);
+        // Don't fail the main prediction creation
+      }
+    }
+    
+    // Create or update influencer profile
+    try {
+      let influencerProfile = await InfluencerProfile.findOne({ walletAddress: creator });
+      
+      if (!influencerProfile) {
+        // Create new influencer profile
+        influencerProfile = new InfluencerProfile({
+          name: creator.substring(0, 6) + '...' + creator.substring(creator.length - 4), // Default name from wallet
+          walletAddress: creator,
+          bio: 'Influencer on Investra platform',
+          expertise: [category],
+          verificationStatus: 'unverified',
+          reputation: 0
+        });
+        await influencerProfile.save();
+        console.log('Created new influencer profile for:', creator);
+      } else {
+        // Update existing profile
+        await InfluencerProfile.findOneAndUpdate(
+          { walletAddress: creator },
+          { 
+            $inc: { 
+              'predictionStats.totalCreated': 1,
+              totalPredictions: 1
+            },
+            $set: {
+              'predictionStats.lastPredictionDate': new Date(),
+              updatedAt: new Date()
+            }
+          }
+        );
+        console.log('Updated influencer profile stats for:', creator);
+      }
+    } catch (profileError) {
+      console.error('Error handling influencer profile:', profileError);
+      // Don't fail the prediction creation if profile update fails
+    }
+    
     res.json({
       success: true,
       data: {
@@ -411,6 +491,35 @@ router.post('/predictions/:id/vote', async (req, res) => {
     
     // Vote in MongoDB
     const prediction = await daoService.voteInDB(parseInt(id), voter, support);
+    
+    // Check if prediction becomes approved (70%+ yes votes) and update influencer stats
+    try {
+      const totalVotes = prediction.yesVotes + prediction.noVotes;
+      if (totalVotes > 0) {
+        const yesPercentage = (prediction.yesVotes / totalVotes) * 100;
+        
+        if (yesPercentage >= 70 && !prediction.isApproved) {
+          // Prediction just became approved, update influencer stats
+          await InfluencerProfile.findOneAndUpdate(
+            { walletAddress: prediction.creator },
+            { 
+              $inc: { 
+                'predictionStats.totalApproved': 1,
+                successfulPredictions: 1,
+                reputation: 5 // Increase reputation for approved prediction
+              },
+              $set: {
+                updatedAt: new Date()
+              }
+            }
+          );
+          console.log('Updated influencer stats for approved prediction:', prediction.creator);
+        }
+      }
+    } catch (statsError) {
+      console.error('Error updating influencer stats after vote:', statsError);
+      // Don't fail the vote if stats update fails
+    }
     
     res.json({
       success: true,

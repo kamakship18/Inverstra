@@ -24,6 +24,8 @@ app.use(express.urlencoded({ extended: true }));
 
 app.use('/api/test', require('./routes/testRoutes'));
 app.use('/api/learners', require('./routes/learnerRoutes'));
+app.use('/api/influencers', require('./routes/influencerRoutes'));
+app.use('/api/predictions', require('./routes/predictionDataRoutes'));
 app.use('/api/dao', require('./routes/daoRoutes'));
 
 app.get('/', (req, res) => {

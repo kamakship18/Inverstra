@@ -12,6 +12,9 @@ export default function Dashboard() {
   const [walletAddress, setWalletAddress] = useState("");
   
   const [userName, setUserName] = useState("User");
+  const [livePredictions, setLivePredictions] = useState([]);
+  const [aiInsights, setAiInsights] = useState(null);
+  const [loading, setLoading] = useState(true);
 
 useEffect(() => {
   // Try to fetch user profile from the backend first
@@ -30,6 +33,9 @@ useEffect(() => {
           
           // Save to localStorage as backup
           localStorage.setItem('inverstraUserProfile', JSON.stringify(profileData));
+          
+          // Fetch live predictions and AI insights
+          await fetchLivePredictionsAndInsights(walletAddress, profileData);
         }
       }
     } catch (error) {
@@ -42,16 +48,46 @@ useEffect(() => {
           const parsedData = JSON.parse(savedData);
           if (parsedData.name) {
             setUserName(parsedData.name);
+            // Try to fetch predictions even with localStorage data
+            const walletAddress = localStorage.getItem('connectedWalletAddress');
+            if (walletAddress) {
+              await fetchLivePredictionsAndInsights(walletAddress, parsedData);
+            }
           }
         }
       } catch (e) {
         console.error("Error retrieving user name from storage", e);
       }
+    } finally {
+      setLoading(false);
     }
   };
   
   fetchUserProfile();
 }, []);
+
+// Fetch live predictions and AI insights
+const fetchLivePredictionsAndInsights = async (walletAddress, profileData) => {
+  try {
+    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5004';
+    
+    // Fetch live predictions (approved DAO predictions)
+    const predictionsResponse = await axios.get(`${backendUrl}/api/dao/predictions/approved`);
+    if (predictionsResponse.data.success) {
+      setLivePredictions(predictionsResponse.data.data || []);
+    }
+    
+    // Fetch AI insights based on profile
+    const insightsResponse = await axios.get(`${backendUrl}/api/learners/curated-content/${walletAddress}`);
+    if (insightsResponse.data.success) {
+      setAiInsights(insightsResponse.data.data);
+    }
+  } catch (error) {
+    console.error("Error fetching predictions and insights:", error);
+    // Fallback to static data
+    setLivePredictions(communityPredictions);
+  }
+};
 
   useEffect(() => {
     const connectedWallet = localStorage.getItem('connectedWalletAddress');
@@ -71,7 +107,7 @@ useEffect(() => {
   };
 
   // to filter predictions that have 70% more yes than no votes
-  const filteredPredictions = communityPredictions.filter(pred => {
+  const filteredPredictions = livePredictions.filter(pred => {
     const totalVotes = pred.votes.yes + pred.votes.no;
     const yesPercentage = (pred.votes.yes / totalVotes) * 100;
     const noPercentage = (pred.votes.no / totalVotes) * 100;
@@ -262,10 +298,77 @@ useEffect(() => {
               <p className="text-gray-400">Here's what's trending in your network today.</p>
             </div>
             
+            {loading && (
+              <div className="flex justify-center items-center py-8">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-500"></div>
+                <span className="ml-2 text-gray-400">Loading your personalized insights...</span>
+              </div>
+            )}
+            
+            {/* AI Insights Section */}
+            {aiInsights && (
+              <div className="mb-8">
+                <h2 className="text-xl font-bold mb-4">🤖 AI Insights for You</h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {aiInsights.marketTrends && aiInsights.marketTrends.length > 0 && (
+                    <div className="bg-gradient-to-br from-blue-900/30 to-purple-900/30 rounded-xl border border-blue-500/20 p-4">
+                      <h3 className="font-semibold text-blue-400 mb-2">📈 Market Trends</h3>
+                      <div className="space-y-2">
+                        {aiInsights.marketTrends.slice(0, 2).map((trend, index) => (
+                          <div key={index} className="text-sm text-gray-300">
+                            {trend}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  
+                  {aiInsights.riskAlerts && aiInsights.riskAlerts.length > 0 && (
+                    <div className="bg-gradient-to-br from-red-900/30 to-orange-900/30 rounded-xl border border-red-500/20 p-4">
+                      <h3 className="font-semibold text-red-400 mb-2">⚠️ Risk Alerts</h3>
+                      <div className="space-y-2">
+                        {aiInsights.riskAlerts.slice(0, 2).map((alert, index) => (
+                          <div key={index} className="text-sm text-gray-300">
+                            {alert}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  
+                  {aiInsights.learningRecommendations && aiInsights.learningRecommendations.length > 0 && (
+                    <div className="bg-gradient-to-br from-green-900/30 to-teal-900/30 rounded-xl border border-green-500/20 p-4">
+                      <h3 className="font-semibold text-green-400 mb-2">📚 Learning Recommendations</h3>
+                      <div className="space-y-2">
+                        {aiInsights.learningRecommendations.slice(0, 2).map((rec, index) => (
+                          <div key={index} className="text-sm text-gray-300">
+                            {rec}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  
+                  {aiInsights.personalizedNews && aiInsights.personalizedNews.length > 0 && (
+                    <div className="bg-gradient-to-br from-purple-900/30 to-pink-900/30 rounded-xl border border-purple-500/20 p-4">
+                      <h3 className="font-semibold text-purple-400 mb-2">📰 Personalized News</h3>
+                      <div className="space-y-2">
+                        {aiInsights.personalizedNews.slice(0, 2).map((news, index) => (
+                          <div key={index} className="text-sm text-gray-300">
+                            {news}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
             {/* Recent Predictions (Instagram-style) */}
             <div className="mb-8">
               <div className="flex justify-between items-center mb-4">
-                <h2 className="text-xl font-bold">Recent Predictions</h2>
+                <h2 className="text-xl font-bold">Live Predictions (DAO Approved)</h2>
                 <div className="flex gap-2">
                   <button 
                     onClick={() => setActiveFilter("All")}

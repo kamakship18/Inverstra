@@ -389,8 +389,8 @@ const CreatePredictionPage = () => {
     }
 
     try {
-      // Submit to regular contract
-      await submitToRegularContract();
+      // Submit to DAO for voting (all predictions go through DAO now)
+      await submitToDAO();
     } catch (err) {
       console.error("Transaction failed:", err);
       toast.error("Transaction failed: " + (err.message || "Unknown error"));
@@ -398,6 +398,82 @@ const CreatePredictionPage = () => {
   };
 
 
+
+  const submitToDAO = async () => {
+    try {
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5004';
+      
+      // Create prediction title and description
+      const predictionTitle = `${formData.asset} ${formData.predictionType === 'priceTarget' ? 'will reach ' + formData.targetPrice : 
+                            formData.predictionType === 'percentage' ? 'will change by ' + formData.targetPrice : 
+                            'will ' + formData.targetPrice} by ${formData.deadline}`;
+      
+      const predictionDescription = formData.reasoning;
+      
+      // Prepare original prediction data for comprehensive storage
+      const sources = uploadedFiles.map(file => ({
+        name: file.name,
+        type: file.type,
+        validation: fileValidations[file.id] || { trustLevel: 'unverified', score: 0 }
+      }));
+
+      const originalPredictionData = {
+        validationScore: validationPercentage,
+        sources: sources,
+        perplexityCheck: reasoningValidation,
+        formData: {
+          category: formData.category,
+          asset: formData.asset,
+          predictionType: formData.predictionType,
+          targetPrice: formData.targetPrice,
+          deadline: formData.deadline,
+          confidence: formData.confidence,
+          confirmed: formData.confirmed
+        },
+        aiValidation: {
+          reasoningScore: reasoningValidation?.score || 0,
+          sourceCredibility: validationPercentage,
+          marketRelevance: 85, // Default value
+          overallScore: validationPercentage,
+          validationPassed: validationMeetsThreshold(),
+          validationDate: new Date()
+        }
+      };
+
+      // Submit to DAO backend
+      const response = await fetch(`${backendUrl}/api/dao/predictions/create`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          title: predictionTitle,
+          description: predictionDescription,
+          category: formData.category,
+          votingPeriod: 7, // 7 days voting period
+          creator: userAddress || 'Anonymous',
+          originalPredictionData: originalPredictionData
+        }),
+      });
+
+      const result = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(result.message || 'Failed to submit to DAO');
+      }
+
+      toast.success("Prediction submitted to DAO for community voting!");
+      
+      // Redirect to community hub after successful submission
+      setTimeout(() => {
+        router.push('/influencer/community-hub');
+      }, 2000);
+      
+    } catch (error) {
+      console.error('Error submitting to DAO:', error);
+      throw error;
+    }
+  };
 
   const submitToRegularContract = async () => {
     // First save to MongoDB

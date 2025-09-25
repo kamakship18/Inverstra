@@ -18,8 +18,7 @@ export default function CommunityHub() {
   const [aiResponse, setAiResponse] = useState("");
   
   useEffect(() => {
-    // Load data from the JSON file
-    setPredictions(communityPredictions);
+    fetchActivePredictions();
     
     // Get wallet address from localStorage
     const connectedWallet = localStorage.getItem('connectedWalletAddress');
@@ -29,10 +28,26 @@ export default function CommunityHub() {
       // Fallback for demo purposes
       setWalletAddress("0x7F4e8ce31EE1F0924057366Fd56252B4BB711AF3");
     }
-    
-    const timer = setTimeout(() => {}, 1000);
-    return () => clearTimeout(timer);
   }, []);
+
+  const fetchActivePredictions = async () => {
+    try {
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5004';
+      const response = await fetch(`${backendUrl}/api/dao/predictions/active`);
+      const data = await response.json();
+      
+      if (data.success) {
+        setPredictions(data.data || []);
+      } else {
+        // Fallback to static data
+        setPredictions(communityPredictions);
+      }
+    } catch (error) {
+      console.error('Error fetching active predictions:', error);
+      // Fallback to static data
+      setPredictions(communityPredictions);
+    }
+  };
 
   // Format address for display
   const formatAddress = (address) => {
@@ -40,26 +55,51 @@ export default function CommunityHub() {
     return `${address.substring(0, 6)}...${address.substring(address.length - 4)}`;
   };
 
-  const handleVote = (predictionId, voteType) => {
-    setUserVotes(prev => ({
-      ...prev,
-      [predictionId]: voteType
-    }));
+  const handleVote = async (predictionId, voteType) => {
+    try {
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5004';
+      
+      const response = await fetch(`${backendUrl}/api/dao/predictions/${predictionId}/vote`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          voter: walletAddress,
+          support: voteType === 'yes' // true for yes, false for no
+        }),
+      });
 
-    // Update vote count in the prediction data
-    setPredictions(prev => 
-      prev.map(prediction => {
-        if (prediction.id === predictionId) {
-          const updatedVotes = { ...prediction.votes };
-          voteType === 'yes' ? updatedVotes.yes++ : updatedVotes.no++;
-          return {
-            ...prediction,
-            votes: updatedVotes
-          };
-        }
-        return prediction;
-      })
-    );
+      const result = await response.json();
+      
+      if (result.success) {
+        setUserVotes(prev => ({
+          ...prev,
+          [predictionId]: voteType
+        }));
+
+        // Update vote count in the prediction data
+        setPredictions(prev => prev.map(pred => {
+          if (pred.id === predictionId) {
+            return {
+              ...pred,
+              votes: {
+                yes: voteType === 'yes' ? pred.votes.yes + 1 : pred.votes.yes,
+                no: voteType === 'no' ? pred.votes.no + 1 : pred.votes.no
+              }
+            };
+          }
+          return pred;
+        }));
+        
+        alert(`Vote ${voteType === 'yes' ? 'YES' : 'NO'} recorded successfully!`);
+      } else {
+        alert(`Error voting: ${result.message}`);
+      }
+    } catch (error) {
+      console.error('Error voting:', error);
+      alert('Error submitting vote. Please try again.');
+    }
   };
 
   const getDaysLeft = (deadline) => {
