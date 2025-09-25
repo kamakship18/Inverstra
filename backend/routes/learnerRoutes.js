@@ -228,7 +228,7 @@ router.get('/curated-content/:walletAddress', async (req, res) => {
     // If content is stale or doesn't exist, generate new content
     if (!isContentFresh || !curatedContent) {
       console.log('Generating fresh AI-curated content for user:', profile.name);
-      curatedContent = await aiCurationService.curateContentForUser(profile);
+      curatedContent = await aiCurationService.generatePersonalizedInsights(profile);
       
       // Update the profile with new curated content
       await LearnerProfile.findOneAndUpdate(

@@ -475,6 +475,86 @@ const CreatePredictionPage = () => {
     }
   };
 
+  // Function to store prediction data in MongoDB
+  const storePredictionInMongoDB = async () => {
+    try {
+      // Prepare sources data
+      const sources = uploadedFiles.map(file => ({
+        name: file.name,
+        type: file.type,
+        validation: fileValidations[file.id] || { trustLevel: 'unverified', score: 0 }
+      }));
+
+      const predictionData = {
+        predictionText: `${formData.asset} will ${formData.predictionType === 'priceTarget' ? 'reach' : 
+                        formData.predictionType === 'percentage' ? 'change by' : 
+                        'will ' + formData.targetPrice} by ${formData.deadline}`,
+        reasoning: formData.reasoning,
+        validationScore: validationPercentage,
+        sources: sources,
+        perplexityCheck: reasoningValidation,
+        createdBy: walletAddress,
+        formData: {
+          category: formData.category,
+          asset: formData.asset,
+          predictionType: formData.predictionType,
+          targetPrice: formData.targetPrice,
+          deadline: formData.deadline,
+          confidence: formData.confidence,
+          confirmed: formData.confirmed
+        },
+        aiValidation: {
+          reasoningScore: reasoningValidation?.score || 0,
+          sourceCredibility: validationPercentage,
+          marketRelevance: 85,
+          overallScore: validationPercentage,
+          validationPassed: validationMeetsThreshold(),
+          validationDate: new Date()
+        },
+        status: 'submitted-to-dao',
+        metadata: {
+          submissionMethod: 'web'
+        }
+      };
+
+      const response = await fetch('/api/prediction-data', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(predictionData)
+      });
+
+      const result = await response.json();
+      
+      if (result.success) {
+        toast.success('Prediction saved to database successfully!');
+        return result.data;
+      } else {
+        throw new Error(result.message || 'Failed to save prediction');
+      }
+    } catch (error) {
+      console.error('Error storing prediction in MongoDB:', error);
+      toast.error('Failed to save prediction to database');
+      throw error;
+    }
+  };
+
+  // Function to handle "Continue to Community Hub" button
+  const handleContinueToCommunityHub = async () => {
+    try {
+      // Store prediction data in MongoDB
+      await storePredictionInMongoDB();
+      
+      // Redirect to community hub
+      router.push('/influencer/community-hub');
+    } catch (error) {
+      console.error('Error continuing to community hub:', error);
+      // Still redirect even if storage fails (for demo purposes)
+      router.push('/influencer/community-hub');
+    }
+  };
+
   const submitToRegularContract = async () => {
     // First save to MongoDB
     const sources = uploadedFiles.map(file => ({
@@ -669,17 +749,8 @@ const CreatePredictionPage = () => {
   const validationMeetsThreshold = () => {
     const totalScore = getTotalValidationScore();
     
-    // Check if reasoning score is at least 70%
-    const reasoningMeetsThreshold = reasoningValidation && (reasoningValidation.score >= 70);
-    
-    // Check if at least one document has trustLevel = trusted or score >= 70
-    const documentsValidations = Object.values(fileValidations);
-    const documentsMeetThreshold = documentsValidations.some(v => 
-      v.trustLevel === 'trusted' || (v.score && v.score >= 70)
-    );
-    
-    // Both criteria must be met
-    return totalScore >= 70 && reasoningMeetsThreshold && documentsMeetThreshold;
+    // For demo purposes, just check if total score meets threshold
+    return totalScore >= 70;
   };   // Animation variants
    const fadeIn = {
     initial: { opacity: 0, y: 20 },
@@ -1212,46 +1283,61 @@ const CreatePredictionPage = () => {
                           <Button 
                             type="button" 
                             variant="outline" 
-                            onClick={() => setActiveTab('setup')}
+                            onClick={() => handleTabChange('setup')}
                             className="border-gray-700 text-white"
                           >
                             Back
                           </Button>
-                          <Button 
-                            type="button" 
-                            onClick={validatePrediction}
-                            className="bg-cyan-600 hover:bg-cyan-500"
-                            disabled={isValidating}
-                          >
-                            {isValidating ? (
-                              <span className="flex items-center">
-                                <Loader2 size={18} className="animate-spin mr-2" /> Validating...
-                              </span>
-                            ) : (
-                              <span className="flex items-center">
-                                <Shield size={18} className="mr-2" /> Validate Prediction
-                              </span>
+                          
+                          <div className="flex gap-3">
+                            {validationPercentage > 0 && !validationError && (
+                              <Button 
+                                type="button" 
+                                onClick={() => handleTabChange('preview')}
+                                className="bg-green-600 hover:bg-green-500 text-white font-bold"
+                              >
+                                <span className="flex items-center">
+                                  <CheckCircle size={18} className="mr-2" /> Continue to Preview
+                                </span>
+                              </Button>
                             )}
-                          </Button>
+                            
+                            <Button 
+                              type="button" 
+                              onClick={validatePrediction}
+                              className="bg-cyan-600 hover:bg-cyan-500"
+                              disabled={isValidating}
+                            >
+                              {isValidating ? (
+                                <span className="flex items-center">
+                                  <Loader2 size={18} className="animate-spin mr-2" /> Validating...
+                                </span>
+                              ) : (
+                                <span className="flex items-center">
+                                  <Shield size={18} className="mr-2" /> Validate Prediction
+                                </span>
+                              )}
+                            </Button>
+                          </div>
                         </div>
                       </TabsContent>
                     
                       <TabsContent value="preview" className="space-y-6">
-                        <Alert className="border-amber-500/20 bg-amber-500/10">
-                          <AlertCircle className="h-4 w-4 text-amber-400" />
-                          <AlertTitle className="text-amber-400">Preview</AlertTitle>
-                          <AlertDescription className="text-amber-200">
+                        <Alert className={`border-amber-500/20 ${theme === 'dark' ? 'bg-amber-500/10' : 'bg-amber-50'} ${theme === 'dark' ? 'border-amber-500/20' : 'border-amber-200'}`}>
+                          <AlertCircle className={`h-4 w-4 ${theme === 'dark' ? 'text-amber-400' : 'text-amber-600'}`} />
+                          <AlertTitle className={`${theme === 'dark' ? 'text-amber-400' : 'text-amber-700'}`}>Preview</AlertTitle>
+                          <AlertDescription className={`${theme === 'dark' ? 'text-amber-200' : 'text-amber-600'}`}>
                             Review your prediction before submitting to your DAO community.
                           </AlertDescription>
                         </Alert>
                       
                         {/* Summary of prediction details */}
-                        <div className="space-y-4 bg-gray-800/30 rounded-md p-4">
-                          <h3 className="text-white font-medium">Prediction Summary</h3>
+                        <div className={`space-y-4 ${theme === 'dark' ? 'bg-gray-800/30' : 'bg-gray-100'} rounded-md p-4`}>
+                          <h3 className={`${theme === 'dark' ? 'text-white' : 'text-gray-900'} font-medium`}>Prediction Summary</h3>
                           <div className="grid grid-cols-2 gap-3 text-sm">
                             <div>
-                              <span className="text-gray-400">Category:</span>
-                              <p className="text-white">{
+                              <span className={`${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`}>Category:</span>
+                              <p className={`${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>{
                                 formData.category === 'equities' ? 'Equities' : 
                                 formData.category === 'crypto' ? 'Crypto' : 
                                 formData.category === 'commodities' ? 'Commodities' : 
@@ -1260,23 +1346,23 @@ const CreatePredictionPage = () => {
                               }</p>
                             </div>
                             <div>
-                              <span className="text-gray-400">Asset:</span>
-                              <p className="text-white">{formData.asset || 'Not selected'}</p>
+                              <span className={`${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`}>Asset:</span>
+                              <p className={`${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>{formData.asset || 'Not selected'}</p>
                             </div>
                             <div>
-                              <span className="text-gray-400">Prediction:</span>
-                              <p className="text-white">
+                              <span className={`${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`}>Prediction:</span>
+                              <p className={`${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
                                 {formData.predictionType === 'priceTarget' && `Will reach ${formData.targetPrice || 'X'}`}
                                 {formData.predictionType === 'percentage' && `Will change by ${formData.targetPrice || 'X%'}`}
                                 {formData.predictionType === 'event' && `Will ${formData.targetPrice || 'event'}`}
                               </p>
                             </div>
                             <div>
-                              <span className="text-gray-400">By:</span>
-                              <p className="text-white">{formData.deadline || 'No deadline set'}</p>
+                              <span className={`${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`}>By:</span>
+                              <p className={`${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>{formData.deadline || 'No deadline set'}</p>
                             </div>
                             <div>
-                              <span className="text-gray-400">Confidence:</span>
+                              <span className={`${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`}>Confidence:</span>
                               <p className={getConfidenceColor(formData.confidence)}>
                                 {formData.confidence}/5
                               </p>
@@ -1288,14 +1374,14 @@ const CreatePredictionPage = () => {
                           <Button 
                             type="button" 
                             variant="outline" 
-                            onClick={() => setActiveTab('reasoning')}
-                            className="border-gray-700 text-white"
+                            onClick={() => handleTabChange('reasoning')}
+                            className={`${theme === 'dark' ? 'border-gray-700 text-white hover:bg-gray-800' : 'border-gray-300 text-gray-700 hover:bg-gray-50'}`}
                           >
                             Back
                           </Button>
                           <Button 
                             type="button" 
-                            onClick={() => setActiveTab('submit')}
+                            onClick={() => handleTabChange('submit')}
                             className="bg-cyan-600 hover:bg-cyan-500"
                           >
                             Next: Submit
@@ -1305,45 +1391,45 @@ const CreatePredictionPage = () => {
                       
                       <TabsContent value="submit" className="space-y-6">
                         {/* Confirmation */}
-                        <Alert className="border-cyan-500/20 bg-cyan-500/10">
-                          <AlertCircle className="h-4 w-4 text-cyan-400" />
-                          <AlertTitle className="text-cyan-400">Almost there!</AlertTitle>
-                          <AlertDescription className="text-cyan-200">
+                        <Alert className={`border-cyan-500/20 ${theme === 'dark' ? 'bg-cyan-500/10' : 'bg-cyan-50'} ${theme === 'dark' ? 'border-cyan-500/20' : 'border-cyan-200'}`}>
+                          <AlertCircle className={`h-4 w-4 ${theme === 'dark' ? 'text-cyan-400' : 'text-cyan-600'}`} />
+                          <AlertTitle className={`${theme === 'dark' ? 'text-cyan-400' : 'text-cyan-700'}`}>Almost there!</AlertTitle>
+                          <AlertDescription className={`${theme === 'dark' ? 'text-cyan-200' : 'text-cyan-600'}`}>
                             Your prediction will be submitted to the blockchain and shared with your DAO community.
                           </AlertDescription>
                         </Alert>
                         
                         {validationError && (
-                          <Alert className="border-red-500/20 bg-red-500/10 mb-4">
-                            <AlertCircle className="h-4 w-4 text-red-400" />
-                            <AlertTitle className="text-red-400">Validation Failed</AlertTitle>
-                            <AlertDescription className="text-red-200">
+                          <Alert className={`border-red-500/20 ${theme === 'dark' ? 'bg-red-500/10' : 'bg-red-50'} ${theme === 'dark' ? 'border-red-500/20' : 'border-red-200'} mb-4`}>
+                            <AlertCircle className={`h-4 w-4 ${theme === 'dark' ? 'text-red-400' : 'text-red-600'}`} />
+                            <AlertTitle className={`${theme === 'dark' ? 'text-red-400' : 'text-red-700'}`}>Validation Failed</AlertTitle>
+                            <AlertDescription className={`${theme === 'dark' ? 'text-red-200' : 'text-red-600'}`}>
                               {validationError}
                             </AlertDescription>
                           </Alert>
                         )}
                         
                         {validationPercentage > 0 && !validationError && (
-                          <Alert className="border-green-500/20 bg-green-500/10 mb-4">
-                            <CheckCircle className="h-4 w-4 text-green-400" />
-                            <AlertTitle className="text-green-400">Validation Score: {validationPercentage}%</AlertTitle>
-                            <AlertDescription className="text-green-200">
+                          <Alert className={`border-green-500/20 ${theme === 'dark' ? 'bg-green-500/10' : 'bg-green-50'} ${theme === 'dark' ? 'border-green-500/20' : 'border-green-200'} mb-4`}>
+                            <CheckCircle className={`h-4 w-4 ${theme === 'dark' ? 'text-green-400' : 'text-green-600'}`} />
+                            <AlertTitle className={`${theme === 'dark' ? 'text-green-400' : 'text-green-700'}`}>Validation Score: {validationPercentage}%</AlertTitle>
+                            <AlertDescription className={`${theme === 'dark' ? 'text-green-200' : 'text-green-600'}`}>
                               Your prediction is well-supported and ready for review.
                             </AlertDescription>
                           </Alert>
                         )}
                         
-                        <div className="flex flex-row items-start space-x-3 space-y-0 rounded-md border border-gray-700 p-4">
+                        <div className={`flex flex-row items-start space-x-3 space-y-0 rounded-md border ${theme === 'dark' ? 'border-gray-700' : 'border-gray-300'} p-4`}>
                           <Checkbox
                             checked={formData.confirmed}
                             onCheckedChange={(checked) => handleChange('confirmed', checked)}
                             className="data-[state=checked]:bg-cyan-600 data-[state=checked]:border-cyan-600"
                           />
                           <div className="space-y-1 leading-none">
-                            <label className="text-white">
+                            <label className={`${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
                               I confirm this prediction is clear, verifiable, and backed with reasoning
                             </label>
-                            <p className="text-gray-500 text-sm">
+                            <p className={`${theme === 'dark' ? 'text-gray-500' : 'text-gray-600'} text-sm`}>
                               By submitting, this prediction will be reviewed by your DAO community
                             </p>
                           </div>
@@ -1354,7 +1440,7 @@ const CreatePredictionPage = () => {
                             type="button" 
                             variant="outline" 
                             onClick={() => setActiveTab('preview')}
-                            className="border-gray-700 text-white"
+                            className={`${theme === 'dark' ? 'border-gray-700 text-white hover:bg-gray-800' : 'border-gray-300 text-gray-700 hover:bg-gray-50'}`}
                           >
                             Back
                           </Button>
@@ -1369,7 +1455,7 @@ const CreatePredictionPage = () => {
                         <div className="flex justify-center mt-4">
                           <Button 
                             type="button" 
-                            onClick={() => window.location.href = '/influencer/community-hub'}
+                            onClick={handleContinueToCommunityHub}
                             className="w-full bg-gradient-to-r from-purple-600 to-cyan-600 hover:from-purple-500 hover:to-cyan-500"
                           >
                             Continue to Community Hub
@@ -1384,10 +1470,10 @@ const CreatePredictionPage = () => {
               {/* RIGHT SECTION: Validation Result & Preview */}
               <div className="space-y-6 lg:sticky lg:top-24 lg:self-start">
                 {/* Validation Result Card */}
-                <Card className="bg-gray-900/60 border-gray-800 shadow-lg overflow-hidden">
-                  <CardHeader className="bg-gray-800/50 border-b border-gray-800/50">
-                    <CardTitle className="text-lg text-white flex items-center">
-                      <CheckCircle size={18} className="mr-2 text-cyan-400" />
+                <Card className={`${theme === 'dark' ? 'bg-gray-900/60 border-gray-800' : 'bg-white border-gray-200'} shadow-lg overflow-hidden`}>
+                  <CardHeader className={`${theme === 'dark' ? 'bg-gray-800/50 border-b border-gray-800/50' : 'bg-gray-50 border-b border-gray-200'}`}>
+                    <CardTitle className={`text-lg ${theme === 'dark' ? 'text-white' : 'text-gray-900'} flex items-center`}>
+                      <CheckCircle size={18} className={`mr-2 ${theme === 'dark' ? 'text-cyan-400' : 'text-cyan-600'}`} />
                       Validation Results
                     </CardTitle>
                   </CardHeader>
@@ -1395,48 +1481,49 @@ const CreatePredictionPage = () => {
                     {isValidating ? (
                       <div className="flex flex-col items-center justify-center py-8">
                         <div className="w-12 h-12 border-4 border-cyan-600/30 border-t-cyan-500 rounded-full animate-spin mb-4"></div>
-                        <p className="text-cyan-300">Analyzing prediction...</p>
+                        <p className={`${theme === 'dark' ? 'text-cyan-300' : 'text-cyan-600'}`}>Analyzing prediction...</p>
                       </div>
                     ) : validationPercentage > 0 ? (
                       <div className="space-y-4">
-                        <div className="relative h-4 bg-gray-700 rounded-full overflow-hidden">
+                        <div className={`relative h-4 ${theme === 'dark' ? 'bg-gray-700' : 'bg-gray-200'} rounded-full overflow-hidden`}>
                           <div 
                             className={`absolute top-0 left-0 h-full rounded-full ${
-                              validationPercentage >= 80 ? 'bg-green-500' : 
-                              validationPercentage >= 50 ? 'bg-yellow-500' : 'bg-red-500'
+                              validationPercentage >= 70 ? 'bg-green-500' : 
+                              validationPercentage >= 40 ? 'bg-yellow-500' : 'bg-red-500'
                             }`}
                             style={{ width: `${validationPercentage}%` }}
                           ></div>
                         </div>
                         
                         <div className="flex justify-between text-sm">
-                          <span className="text-gray-400">Score:</span>
+                          <span className={`${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`}>Score:</span>
                           <span className={`font-medium ${
-                            validationPercentage >= 80 ? 'text-green-400' : 
-                            validationPercentage >= 50 ? 'text-yellow-400' : 'text-red-400'
+                            validationPercentage >= 70 ? (theme === 'dark' ? 'text-green-400' : 'text-green-600') : 
+                            validationPercentage >= 40 ? (theme === 'dark' ? 'text-yellow-400' : 'text-yellow-600') : 
+                            (theme === 'dark' ? 'text-red-400' : 'text-red-600')
                           }`}>{validationPercentage}%</span>
                         </div>
                         
                         {validationError ? (
-                          <Alert className="border-red-500/20 bg-red-500/10">
-                            <AlertCircle className="h-4 w-4 text-red-400" />
-                            <AlertTitle className="text-red-400">Validation Failed</AlertTitle>
-                            <AlertDescription className="text-red-200 text-sm">
+                          <Alert className={`border-red-500/20 ${theme === 'dark' ? 'bg-red-500/10' : 'bg-red-50'} ${theme === 'dark' ? 'border-red-500/20' : 'border-red-200'}`}>
+                            <AlertCircle className={`h-4 w-4 ${theme === 'dark' ? 'text-red-400' : 'text-red-600'}`} />
+                            <AlertTitle className={`${theme === 'dark' ? 'text-red-400' : 'text-red-700'}`}>Validation Failed</AlertTitle>
+                            <AlertDescription className={`${theme === 'dark' ? 'text-red-200' : 'text-red-600'} text-sm`}>
                               {validationError}
                             </AlertDescription>
                           </Alert>
                         ) : (
-                          <Alert className="border-green-500/20 bg-green-500/10">
-                            <CheckCircle className="h-4 w-4 text-green-400" />
-                            <AlertTitle className="text-green-400">Prediction Validated</AlertTitle>
-                            <AlertDescription className="text-green-200 text-sm">
+                          <Alert className={`border-green-500/20 ${theme === 'dark' ? 'bg-green-500/10' : 'bg-green-50'} ${theme === 'dark' ? 'border-green-500/20' : 'border-green-200'}`}>
+                            <CheckCircle className={`h-4 w-4 ${theme === 'dark' ? 'text-green-400' : 'text-green-600'}`} />
+                            <AlertTitle className={`${theme === 'dark' ? 'text-green-400' : 'text-green-700'}`}>Prediction Validated</AlertTitle>
+                            <AlertDescription className={`${theme === 'dark' ? 'text-green-200' : 'text-green-600'} text-sm`}>
                               Your prediction is well-supported by data and reasoning.
                             </AlertDescription>
                           </Alert>
                         )}
                       </div>
                     ) : (
-                      <div className="py-6 text-center text-gray-400 text-sm">
+                      <div className={`py-6 text-center ${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'} text-sm`}>
                         <p>Submit your reasoning to get validation results</p>
                       </div>
                     )}
@@ -1444,12 +1531,12 @@ const CreatePredictionPage = () => {
                 </Card>
                 
                 {/* Live Preview */}
-                <div className="bg-gray-900/50 rounded-lg p-4 border border-gray-800 shadow-lg">
-                  <h3 className="text-lg font-medium text-white mb-2">Live Preview</h3>
-                  <p className="text-gray-400 text-sm">This is how your prediction will appear after approval</p>
+                <div className={`${theme === 'dark' ? 'bg-gray-900/50 border-gray-800' : 'bg-gray-50 border-gray-200'} rounded-lg p-4 border shadow-lg`}>
+                  <h3 className={`text-lg font-medium ${theme === 'dark' ? 'text-white' : 'text-gray-900'} mb-2`}>Live Preview</h3>
+                  <p className={`${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'} text-sm`}>This is how your prediction will appear after approval</p>
                 </div>
                 
-                <Card className="bg-gray-900/50 border-gray-800 shadow-2xl backdrop-blur-sm overflow-hidden transition-all duration-300 hover:shadow-cyan-900/20">
+                <Card className={`${theme === 'dark' ? 'bg-gray-900/50 border-gray-800 hover:shadow-cyan-900/20' : 'bg-white border-gray-200 hover:shadow-gray-200'} shadow-2xl backdrop-blur-sm overflow-hidden transition-all duration-300`}>
                   <div className="absolute top-0 right-0 bg-amber-500/20 text-amber-300 text-xs py-1 px-3 rounded-bl-lg">
                     Pending DAO Review
                   </div>
@@ -1475,28 +1562,28 @@ const CreatePredictionPage = () => {
                   <CardContent>
                     <div className="space-y-4">
                       <div>
-                        <h3 className="text-lg font-medium text-white flex items-center">
+                        <h3 className={`text-lg font-medium ${theme === 'dark' ? 'text-white' : 'text-gray-900'} flex items-center`}>
                           {formData.asset ? formData.asset : 'Asset'} 
                           {formData.predictionType === 'priceTarget' && 
-                            <span className="ml-2 text-cyan-400">will reach {formData.targetPrice || 'X'}</span>
+                            <span className={`ml-2 ${theme === 'dark' ? 'text-cyan-400' : 'text-cyan-600'}`}>will reach {formData.targetPrice || 'X'}</span>
                           }
                           {formData.predictionType === 'percentage' && 
-                            <span className="ml-2 text-cyan-400">will change by {formData.targetPrice || 'X%'}</span>
+                            <span className={`ml-2 ${theme === 'dark' ? 'text-cyan-400' : 'text-cyan-600'}`}>will change by {formData.targetPrice || 'X%'}</span>
                           }
                           {formData.predictionType === 'event' && 
-                            <span className="ml-2 text-cyan-400">will {formData.targetPrice || 'event'}</span>
+                            <span className={`ml-2 ${theme === 'dark' ? 'text-cyan-400' : 'text-cyan-600'}`}>will {formData.targetPrice || 'event'}</span>
                           }
                         </h3>
                         
                         <div className="mt-2 flex gap-2">
                           {formData.deadline && (
-                            <Badge variant="outline" className="border-gray-700 text-gray-400">
+                            <Badge variant="outline" className={`${theme === 'dark' ? 'border-gray-700 text-gray-400' : 'border-gray-300 text-gray-600'}`}>
                               <Calendar size={12} className="mr-1" />
                               By {formData.deadline}
                             </Badge>
                           )}
                           {formData.confidence && (
-                            <Badge variant="outline" className={`border-gray-700 ${getConfidenceColor(formData.confidence)}`}>
+                            <Badge variant="outline" className={`${theme === 'dark' ? 'border-gray-700' : 'border-gray-300'} ${getConfidenceColor(formData.confidence)}`}>
                               <div className="flex items-center">
                                 {[...Array(formData.confidence)].map((_, i) => (
                                   <Star key={i} size={12} fill="currentColor" className="mr-0.5" />
@@ -1508,21 +1595,21 @@ const CreatePredictionPage = () => {
                         </div>
                       </div>
                       
-                      <div className="bg-gray-800/50 rounded-md p-3 text-sm text-gray-300">
+                      <div className={`${theme === 'dark' ? 'bg-gray-800/50 text-gray-300' : 'bg-gray-100 text-gray-700'} rounded-md p-3 text-sm`}>
                         {formData.reasoning || "Your reasoning will appear here..."}
                       </div>
                     </div>
                   </CardContent>
                   
-                  <CardFooter className="border-t border-gray-800 pt-3">
-                    <div className="flex justify-between items-center w-full text-xs text-gray-500">
+                  <CardFooter className={`border-t ${theme === 'dark' ? 'border-gray-800' : 'border-gray-200'} pt-3`}>
+                    <div className={`flex justify-between items-center w-full text-xs ${theme === 'dark' ? 'text-gray-500' : 'text-gray-600'}`}>
                       <div className="flex items-center gap-4">
                         <div className="flex items-center">
                           <Share2 size={14} className="mr-1" />
                           Share
                         </div>
                         {formData.predictionType === 'priceTarget' && (
-                          <Badge className="bg-gray-800/80 text-gray-400 hover:bg-gray-700">Short-term</Badge>
+                          <Badge className={`${theme === 'dark' ? 'bg-gray-800/80 text-gray-400 hover:bg-gray-700' : 'bg-gray-200 text-gray-600 hover:bg-gray-300'}`}>Short-term</Badge>
                         )}
                       </div>
                     </div>

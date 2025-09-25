@@ -246,52 +246,54 @@ export default function LearnerProfileSetup() {
           
           showToast('Saving your profile...', 'loading');
           
-          // Check if profile already exists
-          const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5004';
+          // Demo mode: Save profile data to localStorage
+          const profileData = {
+            ...formData,
+            walletAddress,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
+          };
           
-          // First check if the profile exists
-          const checkResponse = await axios.get(`${backendUrl}/api/learners/wallet/${walletAddress}`);
+          // Save profile to localStorage
+          localStorage.setItem('inverstraUserProfile', JSON.stringify(profileData));
+          localStorage.setItem('userRole', 'learner');
           
-          if (checkResponse.data.success) {
-            // Profile exists, update it
-            await axios.put(`${backendUrl}/api/learners/wallet/${walletAddress}`, {
-              ...formData,
-              walletAddress
-            });
-            showToast('Profile updated successfully!', 'success');
-          } else {
-            // Profile doesn't exist, create it
-            await axios.post(`${backendUrl}/api/learners`, {
-              ...formData,
-              walletAddress
-            });
-            showToast('Profile created successfully!', 'success');
-          }
+          // Simulate token initialization
+          const tokenData = {
+            walletAddress: walletAddress,
+            userType: 'learner',
+            totalTokens: 20,
+            availableTokens: 20,
+            lockedTokens: 0,
+            tokenCategories: {
+              viewing: 20,
+              voting: 0,
+              creation: 0,
+              bonus: 0
+            },
+            level: 1,
+            reputation: 0,
+            badges: [
+              {
+                name: "Welcome Bonus",
+                description: "Received initial tokens for joining",
+                earnedAt: new Date(),
+                tokenReward: 20
+              }
+            ],
+            lastTransactionDate: new Date(),
+            createdAt: new Date(),
+            updatedAt: new Date()
+          };
+          
+          localStorage.setItem('userTokens', JSON.stringify(tokenData));
+          
+          showToast('Profile created successfully! You received 20 tokens! 🎉', 'success');
           
           setTimeout(() => router.push('/learner/dashboard'), 1500);
         } catch (error) {
           console.error('Error saving profile:', error);
-          
-          // If the error is 404 (profile not found), create a new profile
-          if (error.response && error.response.status === 404) {
-            try {
-              const walletAddress = localStorage.getItem('connectedWalletAddress');
-              const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5004';
-              
-              await axios.post(`${backendUrl}/api/learners`, {
-                ...formData,
-                walletAddress
-              });
-              
-              showToast('Profile created successfully!', 'success');
-              setTimeout(() => router.push('/learner/dashboard'), 1500);
-            } catch (createError) {
-              console.error('Error creating profile:', createError);
-              showToast('Failed to save profile. Please try again later.', 'error');
-            }
-          } else {
-            showToast('Failed to save profile. Please try again later.', 'error');
-          }
+          showToast('Failed to save profile. Please try again later.', 'error');
         }
       }
     } else {

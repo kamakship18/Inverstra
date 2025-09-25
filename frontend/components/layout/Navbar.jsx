@@ -3,11 +3,16 @@ import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { Button } from '../ui/button';
 import ThemeToggle from '../ui/ThemeToggle';
+import TokenDisplay from '../ui/TokenDisplay';
+import TokenModal from '../ui/TokenModal';
 
 const Navbar = () => {
   const router = useRouter();
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [walletAddress, setWalletAddress] = useState('');
+  const [userType, setUserType] = useState('');
+  const [showTokenModal, setShowTokenModal] = useState(false);
   const isHomePage = router.pathname === '/';
   const isAuthPage = router.pathname === '/wallet-connect' || router.pathname === '/role-selection';
   const isProfileSetupPage = router.pathname.includes('/profile-setup');
@@ -29,6 +34,25 @@ const Navbar = () => {
   useEffect(() => {
     setIsMobileMenuOpen(false);
   }, [router.pathname]);
+
+  // Get wallet address and user type
+  useEffect(() => {
+    const connectedWallet = localStorage.getItem('connectedWalletAddress');
+    const userRole = localStorage.getItem('userRole');
+    
+    if (connectedWallet) {
+      setWalletAddress(connectedWallet);
+      setUserType(userRole || 'learner');
+    } else {
+      // Set demo data for showcasing
+      const demoWallet = "0x71C7656EC7ab88b098defB751B7401B5f6d8976F";
+      const demoRole = 'learner';
+      setWalletAddress(demoWallet);
+      setUserType(demoRole);
+      localStorage.setItem('connectedWalletAddress', demoWallet);
+      localStorage.setItem('userRole', demoRole);
+    }
+  }, []);
 
   // Navigation links for different pages
   const renderNavLinks = () => {
@@ -57,10 +81,6 @@ const Navbar = () => {
         <>
           <Link href="/" className="text-gray-700 dark:text-gray-200 hover:text-purple-600 dark:hover:text-purple-400 font-medium relative group">
             Home
-            <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-gradient-to-r from-purple-500 to-blue-600 group-hover:w-full transition-all duration-300"></span>
-          </Link>
-          <Link href="/dao/dashboard" className="text-gray-700 dark:text-gray-200 hover:text-purple-600 dark:hover:text-purple-400 font-medium relative group">
-            DAO Community
             <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-gradient-to-r from-purple-500 to-blue-600 group-hover:w-full transition-all duration-300"></span>
           </Link>
           <Link href="/role-selection" className="text-gray-700 dark:text-gray-200 hover:text-purple-600 dark:hover:text-purple-400 font-medium relative group">
@@ -110,12 +130,6 @@ const Navbar = () => {
             Home
           </Link>
           <Link 
-            href="/dao/dashboard" 
-            className="text-gray-700 dark:text-gray-200 hover:text-purple-600 dark:hover:text-purple-400 font-medium px-3 py-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-          >
-            DAO Community
-          </Link>
-          <Link 
             href="/role-selection" 
             className="text-gray-700 dark:text-gray-200 hover:text-purple-600 dark:hover:text-purple-400 font-medium px-3 py-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
           >
@@ -146,6 +160,20 @@ const Navbar = () => {
             <nav className="flex space-x-6">
               {renderNavLinks()}
             </nav>
+            
+            {/* Token Display */}
+            {walletAddress && !isHomePage && !isAuthPage && (
+              <div 
+                className="cursor-pointer hover:scale-105 transition-transform"
+                onClick={() => setShowTokenModal(true)}
+              >
+                <TokenDisplay 
+                  walletAddress={walletAddress} 
+                  userType={userType}
+                  showDetails={false}
+                />
+              </div>
+            )}
             
             {isHomePage && (
               <Button 
@@ -198,6 +226,14 @@ const Navbar = () => {
           </div>
         )}
       </div>
+
+      {/* Token Modal */}
+      <TokenModal
+        isOpen={showTokenModal}
+        onClose={() => setShowTokenModal(false)}
+        walletAddress={walletAddress}
+        userType={userType}
+      />
     </header>
   );
 };

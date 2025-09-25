@@ -4,6 +4,7 @@ const router = express.Router();
 const DAOPrediction = require('../models/DAOPrediction');
 const InfluencerProfile = require('../models/InfluencerProfile');
 const PredictionData = require('../models/PredictionData');
+const aiCurationService = require('../services/aiCurationService');
 
 // Import contract ABI and address
 const { predictionDAOAbi } = require('../contract/daoAbi.js');
@@ -689,6 +690,51 @@ router.get('/health', async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'DAO service health check failed',
+      error: error.message
+    });
+  }
+});
+
+// AI Analysis for DAO voting
+router.post('/predictions/:id/ai-analysis', async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    // Get prediction data
+    const prediction = await DAOPrediction.findOne({ id: parseInt(id) });
+    
+    if (!prediction) {
+      return res.status(404).json({
+        success: false,
+        message: 'Prediction not found'
+      });
+    }
+
+    // Prepare prediction data for AI analysis
+    const predictionData = {
+      title: prediction.title,
+      description: prediction.description,
+      category: prediction.category,
+      creator: prediction.creator,
+      createdAt: prediction.createdAt
+    };
+
+    // Get AI analysis
+    const aiAnalysis = await aiCurationService.analyzePredictionForDAO(predictionData);
+    
+    res.json({
+      success: true,
+      data: {
+        predictionId: id,
+        analysis: aiAnalysis,
+        timestamp: new Date().toISOString()
+      }
+    });
+  } catch (error) {
+    console.error('Error getting AI analysis:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to get AI analysis',
       error: error.message
     });
   }
