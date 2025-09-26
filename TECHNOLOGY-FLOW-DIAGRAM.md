@@ -35,7 +35,7 @@
 
 ### **📚 LEARNER PATH**
 ```
-Profile Setup ──▶ Dashboard ──▶ View Predictions ──▶ Token Spending ──▶ AI Insights
+Profile Setup ──▶ Dashboard ──▶ View Predictions ──▶ Token Spending ──▶ Market Insights
      │                │              │                    │              │
      ▼                ▼              ▼                    ▼              ▼
 ┌─────────────┐ ┌─────────────┐ ┌─────────────┐ ┌─────────────┐ ┌─────────────┐
@@ -48,7 +48,7 @@ Profile Setup ──▶ Dashboard ──▶ View Predictions ──▶ Token Spe
 
 ### **🎤 INFLUENCER PATH**
 ```
-Profile Setup ──▶ Dashboard ──▶ Create Prediction ──▶ AI Validation ──▶ DAO Submission
+Profile Setup ──▶ Dashboard ──▶ Create Prediction ──▶ Web Verification ──▶ DAO Submission
      │                │              │                    │              │
      ▼                ▼              ▼                    ▼              ▼
 ┌─────────────┐ ┌─────────────┐ ┌─────────────┐ ┌─────────────┐ ┌─────────────┐
@@ -61,11 +61,11 @@ Profile Setup ──▶ Dashboard ──▶ Create Prediction ──▶ AI Valid
 
 ### **🔍 VERIFIER PATH**
 ```
-Profile Setup ──▶ Verify Prediction ──▶ AI Analysis ──▶ DAO Submission ──▶ Public/Private
+Profile Setup ──▶ Verify Prediction ──▶ Web Verification ──▶ DAO Submission ──▶ Public/Private
      │                    │                  │              │              │
      ▼                    ▼                  ▼              ▼              ▼
 ┌─────────────┐ ┌─────────────┐ ┌─────────────┐ ┌─────────────┐ ┌─────────────┐
-│ Verifier    │ │ Online      │ │ AI          │ │ DAO         │ │ Make Live   │
+│ Verifier    │ │ Online      │ │ Web         │ │ DAO         │ │ Make Live   │
 │ Profile     │ │ Prediction  │ │ Verification│ │ Community   │ │ or Keep     │
 │ Creation    │ │ Input       │ │ (20-40%)    │ │ Voting      │ │ Private     │
 └─────────────┘ └─────────────┘ └─────────────┘ └─────────────┘ └─────────────┘
@@ -110,10 +110,10 @@ Profile Setup ──▶ Verify Prediction ──▶ AI Analysis ──▶ DAO Su
 │  ├── Token Management (Balances, Transactions)                                 │
 │  └── DAO Voting Data                                                            │
 ├─────────────────────────────────────────────────────────────────────────────────┤
-│  AI Services                                                                    │
-│  ├── GROQ API (Content Generation)                                             │
-│  ├── Perplexity API (Real-time Web Data)                                       │
-│  └── AI Curation Service (Personalized Insights)                               │
+│   Data Verification Services                                                     │
+│  ├── Web Scraping (Market Data Collection)                                     │
+│  ├── Financial Data Analysis Algorithms                                        │
+│  └── Content Curation Service (Personalized Market Insights)                   │
 └─────────────────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -142,13 +142,13 @@ Profile Setup ──▶ Verify Prediction ──▶ AI Analysis ──▶ DAO Su
 
 ### **User Interaction Flow**
 ```
-User Action ──▶ Frontend ──▶ Backend API ──▶ Database ──▶ AI Service ──▶ Response
-     │              │            │             │            │            │
-     ▼              ▼            ▼             ▼            ▼            ▼
-┌─────────┐ ┌─────────────┐ ┌─────────────┐ ┌─────────┐ ┌─────────┐ ┌─────────┐
-│ Click   │ │ Form        │ │ Route       │ │ MongoDB │ │ GROQ/   │ │ JSON    │
-│ Button  │ │ Validation  │ │ Handler     │ │ Storage │ │ Perplex │ │ Response│
-└─────────┘ └─────────────┘ └─────────────┘ └─────────┘ └─────────┘ └─────────┘
+User Action ──▶ Frontend ──▶ Backend API ──▶ Database ──▶ Web Scraping ──▶ Response
+     │              │            │             │            │                │
+     ▼              ▼            ▼             ▼            ▼                ▼
+┌─────────┐ ┌─────────────┐ ┌─────────────┐ ┌─────────┐ ┌─────────────┐ ┌─────────┐
+│ Click   │ │ Form        │ │ Route       │ │ MongoDB │ │ Verification │ │ JSON    │
+│ Button  │ │ Validation  │ │ Handler     │ │ Storage │ │ Service      │ │ Response│
+└─────────┘ └─────────────┘ └─────────────┘ └─────────┘ └─────────────┘ └─────────┘
 ```
 
 ### **Blockchain Transaction Flow**
@@ -165,29 +165,29 @@ User Action ──▶ MetaMask ──▶ Smart Contract ──▶ Blockchain ─
 
 ---
 
-## **🎯 AI Integration Flow**
+## **🎯 Web Scraping Integration Flow**
 
-### **AI Curation Service Flow**
+### **Content Curation Service Flow**
 ```
-User Profile ──▶ AI Service ──▶ GROQ API ──▶ Content Generation ──▶ Personalized Insights
-     │               │             │               │                      │
-     ▼               ▼             ▼               ▼                      ▼
+User Profile ──▶ Web Scraping ──▶ Market Data ──▶ Content Generation ──▶ Personalized Insights
+     │               │               │               │                      │
+     ▼               ▼               ▼               ▼                      ▼
 ┌─────────┐ ┌─────────────┐ ┌─────────────┐ ┌─────────────┐ ┌─────────────┐
-│ Learning│ │ AI Curation │ │ Llama3-8B   │ │ Learning    │ │ Dashboard   │
-│ Paths   │ │ Service     │ │ Model       │ │ Paths,      │ │ Display     │
-│ News    │ │             │ │             │ │ News,       │ │             │
+│ Learning│ │ Curation    │ │ Financial   │ │ Learning    │ │ Dashboard   │
+│ Paths   │ │ Service     │ │ Data        │ │ Paths,      │ │ Display     │
+│ News    │ │             │ │ Collection  │ │ News,       │ │             │
 │ Prefs   │ │             │ │             │ │ Recs        │ │             │
 └─────────┘ └─────────────┘ └─────────────┘ └─────────────┘ └─────────────┘
 ```
 
-### **DAO AI Analysis Flow**
+### **DAO Verification Analysis Flow**
 ```
-Prediction ──▶ AI Analysis ──▶ Perplexity API ──▶ Web Data ──▶ Market Context ──▶ DAO Decision
+Prediction ──▶ Web Scraping ──▶ Data Collection ──▶ Web Data ──▶ Market Context ──▶ DAO Decision
      │              │               │               │              │               │
      ▼              ▼               ▼               ▼              ▼               ▼
 ┌─────────┐ ┌─────────────┐ ┌─────────────┐ ┌─────────────┐ ┌─────────────┐ ┌─────────────┐
 │ Submit  │ │ Analyze     │ │ Real-time   │ │ Market      │ │ Contextual  │ │ Informed    │
-│ for     │ │ Credibility │ │ Web Search  │ │ Data        │ │ Analysis    │ │ Voting      │
+│ for     │ │ Credibility │ │ Web Scraping│ │ Data        │ │ Analysis    │ │ Voting      │
 │ Voting  │ │ & Quality   │ │             │ │             │ │             │ │             │
 └─────────┘ └─────────────┘ └─────────────┘ └─────────────┘ └─────────────┘ └─────────────┘
 ```
@@ -231,15 +231,15 @@ Prediction ──▶ DAO Submission ──▶ Smart Contract ──▶ Community
 ### **Multi-Source Data Flow**
 ```
 ┌─────────────┐    ┌─────────────┐    ┌─────────────┐    ┌─────────────┐
-│   MongoDB   │    │ Blockchain  │    │   AI APIs   │    │  Frontend   │
-│   Database  │◄──►│  Smart      │◄──►│  (GROQ/     │◄──►│   State     │
-│             │    │  Contracts  │    │  Perplexity)│    │             │
+│   MongoDB   │    │ Blockchain  │    │ Web Scraping│    │  Frontend   │
+│   Database  │◄──►│  Smart      │◄──►│  Services   │◄──►│   State     │
+│             │    │  Contracts  │    │             │    │             │
 └─────────────┘    └─────────────┘    └─────────────┘    └─────────────┘
        ▲                   ▲                   ▲                   ▲
        │                   │                   │                   │
        ▼                   ▼                   ▼                   ▼
 ┌─────────────┐    ┌─────────────┐    ┌─────────────┐    ┌─────────────┐
-│ User        │    │ Prediction  │    │ AI Insights │    │ Real-time   │
+│ User        │    │ Prediction  │    │ Market Data │    │ Real-time   │
 │ Profiles    │    │ Data        │    │ & Analysis  │    │ UI Updates  │
 │ & Tokens    │    │ & Voting    │    │             │    │             │
 └─────────────┘    └─────────────┘    └─────────────┘    └─────────────┘
@@ -267,11 +267,11 @@ Prediction ──▶ DAO Submission ──▶ Smart Contract ──▶ Community
 - **Smart Contracts**: Direct blockchain function calls
 - **Event Listening**: Real-time blockchain event updates
 
-### **4. Backend ↔ AI Services**
-- **GROQ API**: Content generation and analysis
-- **Perplexity API**: Real-time web data retrieval
-- **AI Curation**: Personalized content creation
-- **Fallback Systems**: Demo data when AI unavailable
+### **4. Backend ↔ Web Scraping Services**
+- **Data Collection**: Market data scraping and analysis
+- **Web Verification**: Real-time financial data retrieval
+- **Content Curation**: Personalized content creation
+- **Fallback Systems**: Demo data when web scraping unavailable
 
 ---
 
@@ -283,9 +283,9 @@ Prediction ──▶ DAO Submission ──▶ Smart Contract ──▶ Community
 3. Sets up profile with preferences
 4. Receives initial tokens (20-50)
 5. Interacts with platform:
-   - Learners: View predictions, spend tokens, get AI insights
-   - Influencers: Create predictions, validate with AI, submit to DAO
-   - Verifiers: Verify online predictions, submit to DAO
+   - Learners: View predictions, spend tokens, get market insights
+   - Influencers: Create predictions, verify with web data, submit to DAO
+   - Verifiers: Verify online predictions using web scraping, submit to DAO
 6. DAO community votes on predictions
 7. Approved predictions go live for all users
 8. Token economy drives engagement and monetization
