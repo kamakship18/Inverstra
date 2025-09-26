@@ -76,6 +76,19 @@ const Navbar = () => {
           </Link>
         </>
       );
+    } else if (router.pathname === '/verify-prediction' || router.pathname === '/verified-predictions') {
+      return (
+        <>
+          <Link href="/verify-prediction" className="text-gray-700 dark:text-gray-200 hover:text-green-600 dark:hover:text-green-400 font-medium relative group">
+            Verify Prediction
+            <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-gradient-to-r from-green-500 to-green-600 group-hover:w-full transition-all duration-300"></span>
+          </Link>
+          <Link href="/verified-predictions" className="text-gray-700 dark:text-gray-200 hover:text-green-600 dark:hover:text-green-400 font-medium relative group">
+            Verified Predictions
+            <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-gradient-to-r from-green-500 to-green-600 group-hover:w-full transition-all duration-300"></span>
+          </Link>
+        </>
+      );
     } else {
       return (
         <>
@@ -117,6 +130,23 @@ const Navbar = () => {
             className="text-gray-700 dark:text-gray-200 hover:text-purple-600 dark:hover:text-purple-400 font-medium px-3 py-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
           >
             Who It's For
+          </Link>
+        </>
+      );
+    } else if (router.pathname === '/verify-prediction' || router.pathname === '/verified-predictions') {
+      return (
+        <>
+          <Link 
+            href="/verify-prediction" 
+            className="text-gray-700 dark:text-gray-200 hover:text-green-600 dark:hover:text-green-400 font-medium px-3 py-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+          >
+            Verify Prediction
+          </Link>
+          <Link 
+            href="/verified-predictions" 
+            className="text-gray-700 dark:text-gray-200 hover:text-green-600 dark:hover:text-green-400 font-medium px-3 py-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+          >
+            Verified Predictions
           </Link>
         </>
       );

@@ -3,7 +3,7 @@ import Head from 'next/head';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { BookOpen, LightbulbIcon, ChevronRight, ArrowLeft, Home } from 'lucide-react';
+import { BookOpen, LightbulbIcon, ChevronRight, ArrowLeft, Home, Shield } from 'lucide-react';
 import Navbar from '@/components/layout/Navbar';
 
 export default function RoleSelection() {
@@ -61,7 +61,7 @@ export default function RoleSelection() {
       </div>
 
       {/* Role cards */}
-      <div className="flex flex-col md:flex-row gap-6 md:gap-10 w-full max-w-4xl relative z-10">
+      <div className="flex flex-col lg:flex-row gap-6 lg:gap-8 w-full max-w-6xl relative z-10">
         {/* Learner */}
         <Card
           className={`bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm border hover:border-blue-400/50 transition-all cursor-pointer flex-1
@@ -91,7 +91,7 @@ export default function RoleSelection() {
         </Card>
 
         {/* Divider */}
-        <div className="hidden md:flex items-center justify-center">
+        <div className="hidden lg:flex items-center justify-center">
           <div className="w-px h-40 bg-gray-300 dark:bg-slate-700/50 relative">
             <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white dark:bg-slate-900 px-4 py-2 rounded-full text-gray-500 dark:text-slate-400">
               or
@@ -100,7 +100,7 @@ export default function RoleSelection() {
         </div>
 
         {/* Mobile divider */}
-        <div className="md:hidden flex items-center justify-center py-2">
+        <div className="lg:hidden flex items-center justify-center py-2">
           <span className="text-gray-500 dark:text-slate-400">or</span>
         </div>
 
@@ -127,6 +127,49 @@ export default function RoleSelection() {
                 disabled={selectedRole === 'learner'}
               >
                 <span>Continue as Influencer</span>
+                <ChevronRight className="ml-2 h-4 w-4" />
+              </Button>
+            </Link>
+          </CardContent>
+        </Card>
+
+        {/* Divider */}
+        <div className="hidden lg:flex items-center justify-center">
+          <div className="w-px h-40 bg-gray-300 dark:bg-slate-700/50 relative">
+            <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white dark:bg-slate-900 px-4 py-2 rounded-full text-gray-500 dark:text-slate-400">
+              or
+            </div>
+          </div>
+        </div>
+
+        {/* Mobile divider */}
+        <div className="lg:hidden flex items-center justify-center py-2">
+          <span className="text-gray-500 dark:text-slate-400">or</span>
+        </div>
+
+        {/* Verifier */}
+        <Card
+          className={`bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm border hover:border-green-400/50 transition-all cursor-pointer flex-1
+          ${selectedRole === 'verifier' ? 'border-green-400/50 shadow-lg shadow-green-400/20' : 'border-gray-200 dark:border-slate-800'}`}
+          onClick={() => handleRoleSelect('verifier')}
+        >
+          <CardContent className="p-8 h-full flex flex-col">
+            <div className="bg-green-100 dark:bg-green-900/30 w-16 h-16 rounded-full flex items-center justify-center mb-6">
+              <Shield className="w-8 h-8 text-green-500 dark:text-green-400" />
+            </div>
+
+            <h2 className="text-2xl font-bold mb-4 text-gray-900 dark:text-white">Verify a prediction on net</h2>
+            <p className="text-gray-600 dark:text-slate-300 mb-8 flex-grow">
+              Found a prediction online? Verify its credibility with AI analysis and community validation.
+            </p>
+
+            <Link href="/verify-prediction">
+              <Button
+                className={`justify-between w-full bg-gradient-to-r from-green-300 to-green-400 dark:from-green-600 dark:to-green-700 hover:opacity-90
+                ${selectedRole === 'verifier' ? 'from-green-400 to-green-500 dark:from-green-500 dark:to-green-600' : ''}`}
+                disabled={selectedRole === 'learner' || selectedRole === 'influencer'}
+              >
+                <span>Verify Prediction</span>
                 <ChevronRight className="ml-2 h-4 w-4" />
               </Button>
             </Link>

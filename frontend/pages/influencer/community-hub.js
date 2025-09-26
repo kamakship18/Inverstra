@@ -78,31 +78,78 @@ export default function CommunityHub() {
 
   const fetchActivePredictions = async () => {
     try {
-      // Try to fetch from MongoDB first
-      const response = await fetch('/api/prediction-data?status=submitted-to-dao&limit=20');
-      const result = await response.json();
-      
-      if (result.success && result.data && result.data.length > 0) {
-        // Transform MongoDB data to match the expected format
-        const transformedPredictions = result.data.map(pred => ({
-          id: pred._id,
-          creatorName: pred.createdBy ? formatAddress(pred.createdBy) : 'Anonymous',
-          community: 'DAO Community',
-          category: pred.formData?.category || 'General',
-          asset: pred.formData?.asset || 'Unknown Asset',
-          predictionType: pred.formData?.predictionType || 'priceTarget',
-          targetPrice: pred.formData?.targetPrice || 'N/A',
-          deadline: pred.formData?.deadline || 'N/A',
-          confidence: pred.formData?.confidence || 3,
-          reasoning: pred.reasoning || 'No reasoning provided',
-          confirmed: pred.formData?.confirmed || false,
-          votes: { yes: pred.daoData?.yesVotes || 0, no: pred.daoData?.noVotes || 0 },
-          status: pred.status || 'submitted-to-dao',
-          createdAt: pred.createdAt,
-          validationScore: pred.validationScore || 0
-        }));
-        
-        setPredictions(transformedPredictions);
+      // Try to fetch from MongoDB first (both predictions and verifications)
+      const [predictionsResponse, verificationsResponse] = await Promise.all([
+        fetch('/api/prediction-data?status=submitted-to-dao&limit=20'),
+        fetch('/api/dao/verification/submissions')
+      ]);
+
+      let allPredictions = [];
+
+      // Process regular predictions
+      if (predictionsResponse.ok) {
+        const predictionsResult = await predictionsResponse.json();
+        if (predictionsResult.success && predictionsResult.data && predictionsResult.data.length > 0) {
+          const transformedPredictions = predictionsResult.data.map(pred => ({
+            id: pred._id,
+            creatorName: pred.createdBy ? formatAddress(pred.createdBy) : 'Anonymous',
+            community: 'DAO Community',
+            category: pred.formData?.category || 'General',
+            asset: pred.formData?.asset || 'Unknown Asset',
+            predictionType: pred.formData?.predictionType || 'priceTarget',
+            targetPrice: pred.formData?.targetPrice || 'N/A',
+            deadline: pred.formData?.deadline || 'N/A',
+            confidence: pred.formData?.confidence || 3,
+            reasoning: pred.reasoning || 'No reasoning provided',
+            confirmed: pred.formData?.confirmed || false,
+            votes: { yes: pred.daoData?.yesVotes || 0, no: pred.daoData?.noVotes || 0 },
+            status: pred.status || 'submitted-to-dao',
+            createdAt: pred.createdAt,
+            validationScore: pred.validationScore || 0,
+            isVerification: false
+          }));
+          allPredictions = [...allPredictions, ...transformedPredictions];
+        }
+      }
+
+      // Process verification submissions
+      if (verificationsResponse.ok) {
+        const verificationsResult = await verificationsResponse.json();
+        if (verificationsResult.success && verificationsResult.data && verificationsResult.data.length > 0) {
+          const transformedVerifications = verificationsResult.data.map(verification => ({
+            id: verification._id,
+            creatorName: verification.creator ? formatAddress(verification.creator) : 'Anonymous',
+            community: 'DAO Community',
+            category: verification.category || 'Verification',
+            asset: verification.asset || 'Unknown Asset',
+            predictionType: 'verification',
+            targetPrice: verification.targetPrice || 'N/A',
+            deadline: verification.deadline || 'N/A',
+            confidence: Math.round(verification.verificationResult?.verificationScore / 20) || 3,
+            reasoning: verification.reasoning || 'AI-verified prediction',
+            confirmed: true,
+            votes: { 
+              yes: verification.daoPredictionId?.yesVotes || 0, 
+              no: verification.daoPredictionId?.noVotes || 0 
+            },
+            status: verification.status || 'submitted-to-dao',
+            createdAt: verification.createdAt,
+            validationScore: verification.verificationResult?.verificationScore || 0,
+            isVerification: true,
+            verificationScore: verification.verificationResult?.verificationScore,
+            sourceUrl: verification.sourceUrl,
+            aiAnalysis: verification.verificationResult?.aiAnalysis,
+            transactionHash: verification.transactionHash,
+            blockNumber: verification.blockNumber
+          }));
+          allPredictions = [...allPredictions, ...transformedVerifications];
+        }
+      }
+
+      if (allPredictions.length > 0) {
+        // Sort by creation date (newest first)
+        allPredictions.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+        setPredictions(allPredictions);
       } else {
         // Fallback to static data if no MongoDB data
         setPredictions(communityPredictions);
@@ -441,6 +488,12 @@ export default function CommunityHub() {
                         <Badge className="bg-violet-900/80 text-violet-300 border border-violet-600/30">
                           {prediction.category}
                         </Badge>
+                        {prediction.isVerification && (
+                          <Badge className="bg-green-900/80 text-green-300 border border-green-600/30 flex items-center">
+                            <span className="mr-1">🔍</span>
+                            DAO Verification Pending
+                          </Badge>
+                        )}
                       </div>
                     </div>
                   </CardHeader>
@@ -452,17 +505,53 @@ export default function CommunityHub() {
                       </Badge>
                       <Badge className="bg-amber-900/80 text-amber-300 border border-amber-600/30 flex items-center">
                         <span>Confidence: </span>
-                        <span className="ml-1">
-                          {[...Array(5)].map((_, i) => (
-                            <span key={i} className={i < prediction.confidence ? "text-yellow-400" : "text-gray-600"}>★</span>
-                          ))}
-                        </span>
+                        {prediction.isVerification ? (
+                          <span className="ml-1 font-black text-green-300">
+                            {prediction.verificationScore}% AI Verified
+                          </span>
+                        ) : (
+                          <span className="ml-1">
+                            {[...Array(5)].map((_, i) => (
+                              <span key={i} className={i < prediction.confidence ? "text-yellow-400" : "text-gray-600"}>★</span>
+                            ))}
+                          </span>
+                        )}
                       </Badge>
                     </div>
                     
                     <p className={`line-clamp-4 font-black ${darkMode ? 'text-gray-100' : 'text-gray-900'}`}>
                       {prediction.reasoning}
                     </p>
+                    
+                    {prediction.isVerification && (
+                      <div className="mt-3 space-y-2">
+                        {prediction.sourceUrl && (
+                          <div className="p-2 bg-blue-900/20 border border-blue-600/30 rounded-lg">
+                            <p className="text-sm text-blue-300 font-medium">
+                              <span className="mr-2">🔗</span>
+                              Source: <a href={prediction.sourceUrl} target="_blank" rel="noopener noreferrer" className="underline hover:text-blue-200">
+                                {prediction.sourceUrl.length > 50 ? `${prediction.sourceUrl.substring(0, 50)}...` : prediction.sourceUrl}
+                              </a>
+                            </p>
+                          </div>
+                        )}
+                        {prediction.transactionHash && (
+                          <div className="p-2 bg-green-900/20 border border-green-600/30 rounded-lg">
+                            <p className="text-sm text-green-300 font-medium">
+                              <span className="mr-2">⛓️</span>
+                              Blockchain: <span className="font-mono text-xs">
+                                {prediction.transactionHash.substring(0, 10)}...{prediction.transactionHash.substring(prediction.transactionHash.length - 8)}
+                              </span>
+                              {prediction.blockNumber && (
+                                <span className="ml-2 text-xs text-green-400">
+                                  (Block #{prediction.blockNumber})
+                                </span>
+                              )}
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    )}
                     
                     {hasVoted && (
                       <div className="mt-4">
