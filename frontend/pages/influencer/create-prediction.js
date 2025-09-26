@@ -203,6 +203,7 @@ const CreatePredictionPage = () => {
         } else if (category === 'equities') {
           // Static popular Indian equity data
           assets = [
+            { value: 'AAPL.NASDAQ', label: 'AAPL.NASDAQ - Apple Inc' },
             { value: 'RELIANCE.BSE', label: 'RELIANCE.BSE - Reliance Industries Ltd' },
             { value: 'TCS.BSE', label: 'TCS.BSE - Tata Consultancy Services Ltd' },
             { value: 'HDFCBANK.BSE', label: 'HDFCBANK.BSE - HDFC Bank Ltd' },
@@ -287,10 +288,10 @@ const CreatePredictionPage = () => {
       const totalScore = getTotalValidationScore();
       setValidationPercentage(totalScore);
       
-      // Check if validation passes threshold (70%)
+      // Check if validation passes threshold (30%)
       if (!validationMeetsThreshold()) {
-        setValidationError("Prediction not strong enough. Please add more relevant reasoning or credible documents. Validation requires a score of at least 70%.");
-        toast.error("Please strengthen your reasoning or add more credible sources. Validation requires a score of at least 70%.");
+        setValidationError("Prediction not strong enough. Please add more relevant reasoning or credible documents. Validation requires a score of at least 30%.");
+        toast.error("Please strengthen your reasoning or add more credible sources. Validation requires a score of at least 30%.");
       } else {
         // If validation passes, allow moving to the preview tab
         toast.success("Validation successful! You can now proceed to preview.");
@@ -367,7 +368,7 @@ const CreatePredictionPage = () => {
     
     if (activeTab === 'reasoning' && (nextTab === 'preview' || nextTab === 'submit')) {
       if (!validationMeetsThreshold()) {
-        toast.error("Please strengthen your reasoning or add more credible sources. Validation requires a score of at least 70%.");
+        toast.error("Please strengthen your reasoning or add more credible sources. Validation requires a score of at least 30%.");
         return;
       }
     }
@@ -750,7 +751,7 @@ const CreatePredictionPage = () => {
     const totalScore = getTotalValidationScore();
     
     // For demo purposes, just check if total score meets threshold
-    return totalScore >= 70;
+    return totalScore >= 30;
   };   // Animation variants
    const fadeIn = {
     initial: { opacity: 0, y: 20 },
@@ -1488,8 +1489,8 @@ const CreatePredictionPage = () => {
                         <div className={`relative h-4 ${theme === 'dark' ? 'bg-gray-700' : 'bg-gray-200'} rounded-full overflow-hidden`}>
                           <div 
                             className={`absolute top-0 left-0 h-full rounded-full ${
-                              validationPercentage >= 70 ? 'bg-green-500' : 
-                              validationPercentage >= 40 ? 'bg-yellow-500' : 'bg-red-500'
+                              validationPercentage >= 30 ? 'bg-green-500' : 
+                              validationPercentage >= 15 ? 'bg-yellow-500' : 'bg-red-500'
                             }`}
                             style={{ width: `${validationPercentage}%` }}
                           ></div>
@@ -1498,8 +1499,8 @@ const CreatePredictionPage = () => {
                         <div className="flex justify-between text-sm">
                           <span className={`${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`}>Score:</span>
                           <span className={`font-medium ${
-                            validationPercentage >= 70 ? (theme === 'dark' ? 'text-green-400' : 'text-green-600') : 
-                            validationPercentage >= 40 ? (theme === 'dark' ? 'text-yellow-400' : 'text-yellow-600') : 
+                            validationPercentage >= 30 ? (theme === 'dark' ? 'text-green-400' : 'text-green-600') : 
+                            validationPercentage >= 15 ? (theme === 'dark' ? 'text-yellow-400' : 'text-yellow-600') : 
                             (theme === 'dark' ? 'text-red-400' : 'text-red-600')
                           }`}>{validationPercentage}%</span>
                         </div>
