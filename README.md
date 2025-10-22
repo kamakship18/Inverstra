@@ -171,7 +171,6 @@ Inverstra isn't just a platform—it's a movement to transform how financial adv
 - Accountability becomes the standard in financial content creation
 
 What started as a hackathon project has grown into a community-powered solution redefining trust in financial advice. 
----
 
 ## 👥 **Team**
 
