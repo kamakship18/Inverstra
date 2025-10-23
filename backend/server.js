@@ -12,6 +12,7 @@ const app = express();
 app.use(cors({
   origin: [
     'http://localhost:3000', 
+    'http://localhost:3001',
     'https://hack-india25-maverick1.vercel.app'
   ],
   credentials: true,
@@ -28,6 +29,7 @@ app.use('/api/influencers', require('./routes/influencerRoutes'));
 app.use('/api/predictions', require('./routes/predictionDataRoutes'));
 app.use('/api/dao', require('./routes/daoRoutes'));
 app.use('/api/tokens', require('./routes/tokenRoutes'));
+app.use('/api/fetchai', require('./routes/fetchaiRoutes'));
 
 app.get('/', (req, res) => {
   res.json({

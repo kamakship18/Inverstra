@@ -23,6 +23,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter }
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import Navbar from '@/components/layout/Navbar';
+import FetchAIEnhancedInfluencerCard from '@/components/ui/FetchAIEnhancedInfluencerCard';
 
 // mock data
 const trustData = {
@@ -334,57 +335,11 @@ export default function InfluencerDashboard() {
             <div className="overflow-x-auto pb-4">
               <div className="flex gap-4" style={{ minWidth: 'max-content' }}>
                 {activePredictions.map((prediction) => (
-                  <Card 
+                  <FetchAIEnhancedInfluencerCard 
                     key={prediction.id} 
-                    className={`rounded-2xl shadow-md transition-all w-72 flex-shrink-0 ${
-                      darkMode 
-                        ? 'bg-[#1a1a1a] border border-white/10 hover:shadow-cyan-500/20' 
-                        : 'bg-white border border-gray-200 hover:shadow-lg'
-                    }`}
-                  >
-                    <CardContent className="p-5">
-                      <div className="flex justify-between items-start mb-3">
-                        <div className={`text-lg font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>
-                          {prediction.asset}
-                        </div>
-                        <Badge 
-                          variant="outline" 
-                          className={prediction.status === 'Active' 
-                            ? (darkMode 
-                                ? 'border-green-500/30 bg-green-500/10 text-green-400' 
-                                : 'border-green-300 bg-green-50 text-green-700')
-                            : (darkMode 
-                                ? 'border-yellow-500/30 bg-yellow-500/10 text-yellow-400'
-                                : 'border-yellow-300 bg-yellow-50 text-yellow-700')}
-                        >
-                          {prediction.status}
-                        </Badge>
-                      </div>
-                      
-                      <div className={`text-sm mb-4 ${darkMode ? 'text-slate-300' : 'text-gray-600'}`}>
-                        {prediction.type}
-                      </div>
-                      
-                      <div className="flex items-center justify-between mb-3">
-                        <div className={`text-xs ${darkMode ? 'text-slate-400' : 'text-gray-500'}`}>
-                          Confidence
-                        </div>
-                        <div className="text-sm">{renderConfidence(prediction.confidence)}</div>
-                      </div>
-                      
-                      <div className="flex items-center justify-between text-sm">
-                        <div className={`flex items-center gap-1 ${darkMode ? 'text-cyan-400' : 'text-cyan-600'}`}>
-                          <Clock className="w-4 h-4" />
-                          <span>{daysRemaining(prediction.endDate)} days left</span>
-                        </div>
-                        <Button variant="ghost" size="sm" className={`text-xs p-0 h-auto ${
-                          darkMode ? 'text-slate-400' : 'text-gray-500'
-                        }`}>
-                          Details
-                        </Button>
-                      </div>
-                    </CardContent>
-                  </Card>
+                    prediction={prediction}
+                    darkMode={darkMode}
+                  />
                 ))}
               </div>
             </div>

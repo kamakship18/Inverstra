@@ -288,10 +288,10 @@ const CreatePredictionPage = () => {
       const totalScore = getTotalValidationScore();
       setValidationPercentage(totalScore);
       
-      // Check if validation passes threshold (30%)
+      // Check if validation passes threshold (40%)
       if (!validationMeetsThreshold()) {
-        setValidationError("Prediction not strong enough. Please add more relevant reasoning or credible documents. Validation requires a score of at least 30%.");
-        toast.error("Please strengthen your reasoning or add more credible sources. Validation requires a score of at least 30%.");
+        setValidationError("Prediction not strong enough. Please add more relevant reasoning or credible documents. Validation requires a score of at least 40%.");
+        toast.error("Please strengthen your reasoning or add more credible sources. Validation requires a score of at least 40%.");
       } else {
         // If validation passes, allow moving to the preview tab
         toast.success("Validation successful! You can now proceed to preview.");
@@ -368,7 +368,7 @@ const CreatePredictionPage = () => {
     
     if (activeTab === 'reasoning' && (nextTab === 'preview' || nextTab === 'submit')) {
       if (!validationMeetsThreshold()) {
-        toast.error("Please strengthen your reasoning or add more credible sources. Validation requires a score of at least 30%.");
+        toast.error("Please strengthen your reasoning or add more credible sources. Validation requires a score of at least 40%.");
         return;
       }
     }
@@ -751,7 +751,7 @@ const CreatePredictionPage = () => {
     const totalScore = getTotalValidationScore();
     
     // For demo purposes, just check if total score meets threshold
-    return totalScore >= 30;
+    return totalScore >= 40;
   };   // Animation variants
    const fadeIn = {
     initial: { opacity: 0, y: 20 },

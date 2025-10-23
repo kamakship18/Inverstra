@@ -1,6 +1,6 @@
 const UserTokens = require('../models/UserTokens');
 const TokenTransaction = require('../models/TokenTransaction');
-const { v4: uuidv4 } = require('uuid');
+const crypto = require('crypto');
 
 class TokenService {
   constructor() {
@@ -173,7 +173,7 @@ class TokenService {
   async createTransaction(transactionData) {
     try {
       const transaction = new TokenTransaction({
-        transactionId: uuidv4(),
+        transactionId: crypto.randomUUID(),
         ...transactionData
       });
 
